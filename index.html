@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Discover Videos</title>
+  <link rel="stylesheet" href="theme.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Discover</h1>
+
+    <div class="controls">
+      <select id="sort">
+        <option value="relevance">Most Relevant</option>
+        <option value="popular">Most Popular</option>
+        <option value="newest">Newest</option>
+        <option value="discover">Discover More</option>
+        <option value="short">Short (&lt;10m)</option>
+        <option value="long">Long (10–40m)</option>
+        <option value="longest">Longest (40m+)</option>
+      </select>
+
+      <input id="q" placeholder="Search…">
+      <button id="apply">Apply</button>
+    </div>
+
+    <div id="gallery" class="grid"></div>
+    <div id="loader" class="loader">Loading…</div>
+
+    <button id="loadMore" class="secondary">Load More</button>
+  </div>
+
+  <script type="module" src="homepage.js"></script>
+</body>
+</html>

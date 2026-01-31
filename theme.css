@@ -1,0 +1,95 @@
+:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --panel-soft: #1e2230;
+  --text: #e6e8ee;
+  --muted: #9aa1b2;
+  --accent: #5c7cfa;
+  --border: #2a2f3a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1, h2 {
+  font-weight: 600;
+}
+
+.container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Cards */
+.card {
+  background: var(--panel);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.4);
+}
+
+.thumb {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  display: block;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 8px 0 4px;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Buttons */
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: var(--panel-soft);
+}
+
+/* Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+/* Loader */
+.loader {
+  text-align: center;
+  padding: 30px;
+  color: var(--muted);
+}
