@@ -3,9 +3,16 @@ import { fetchVideos } from "/api.js";
 let offset = 0;
 const limit = 20;
 
+// active filter state
+let activeSort = "relevance";
+let activeLength = null;
+
 const gallery = document.getElementById("gallery");
 const loader = document.getElementById("loader");
+const searchInput = document.getElementById("q");
+const loadMoreBtn = document.getElementById("loadMore");
 
+// main loader
 async function load(reset = false) {
   if (reset) {
     gallery.innerHTML = "";
@@ -14,13 +21,13 @@ async function load(reset = false) {
 
   loader.style.display = "block";
 
-  const sort = document.getElementById("sort").value;
-  const q = document.getElementById("q").value;
+  const q = searchInput.value;
 
   const data = await fetchVideos({
     limit,
     offset,
-    sort,
+    sort: activeSort,
+    length: activeLength,
     q
   });
 
@@ -43,7 +50,45 @@ async function load(reset = false) {
   loader.style.display = "none";
 }
 
-document.getElementById("apply").onclick = () => load(true);
-document.getElementById("loadMore").onclick = () => load();
+// -------------------------
+// FILTER BUTTONS
+// -------------------------
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    // visual active state
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
 
+    // determine filter type
+    if (btn.dataset.sort) {
+      activeSort = btn.dataset.sort;
+      activeLength = null;
+    }
+
+    if (btn.dataset.length) {
+      activeLength = btn.dataset.length;
+      activeSort = "relevance";
+    }
+
+    load(true);
+  });
+});
+
+// -------------------------
+// SEARCH (instant, no apply)
+// -------------------------
+let searchTimeout;
+searchInput.addEventListener("input", () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    load(true);
+  }, 400);
+});
+
+// -------------------------
+// LOAD MORE
+// -------------------------
+loadMoreBtn.addEventListener("click", () => load());
+
+// initial load
 load(true);
