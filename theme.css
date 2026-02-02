@@ -24,23 +24,30 @@ a {
   text-decoration: none;
 }
 
-h1, h2 {
-  font-weight: 600;
-}
-
 .container {
   max-width: 1300px;
   margin: 0 auto;
   padding: 20px;
 }
 
-/* Cards */
+/* --------------------
+   Grid
+-------------------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+/* --------------------
+   Cards
+-------------------- */
 .card {
   background: var(--panel);
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--border);
-  transition: transform .2s ease, box-shadow .2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card:hover {
@@ -52,13 +59,16 @@ h1, h2 {
   width: 100%;
   height: 240px;
   object-fit: cover;
-  display: block;
+}
+
+.card-body {
+  padding: 10px;
 }
 
 .title {
   font-size: 14px;
   font-weight: 600;
-  margin: 8px 0 4px;
+  margin-bottom: 4px;
 }
 
 .meta {
@@ -66,35 +76,27 @@ h1, h2 {
   color: var(--muted);
 }
 
-/* Buttons */
-button {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 14px;
-  cursor: pointer;
+/* --------------------
+   Animations
+-------------------- */
+.fade-in {
+  animation: fadeUp 0.35s ease forwards;
 }
 
-button.secondary {
-  background: var(--panel-soft);
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Grid */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-}
-
-/* Loader */
-.loader {
-  text-align: center;
-  padding: 30px;
-  color: var(--muted);
-}
-
-/* Controls bar */
+/* --------------------
+   Controls Bar
+-------------------- */
 .controls {
   display: flex;
   justify-content: space-between;
@@ -104,17 +106,15 @@ button.secondary {
   margin-bottom: 16px;
 }
 
-/* Sticky behavior */
 .controls.sticky {
   position: sticky;
   top: 0;
   z-index: 20;
   background: rgba(15, 15, 18, 0.95);
   backdrop-filter: blur(6px);
-  padding-top: 12px;
 }
 
-/* Filter buttons */
+/* Filters */
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -127,8 +127,8 @@ button.secondary {
   color: #ccc;
   padding: 6px 12px;
   border-radius: 999px;
-  cursor: pointer;
   font-size: 13px;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
@@ -138,12 +138,11 @@ button.secondary {
 }
 
 .filter-btn.active {
-  background: #4f7cff;
-  border-color: #4f7cff;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 
-/* Divider between sort & length */
 .divider {
   width: 1px;
   height: 22px;
@@ -161,8 +160,28 @@ button.secondary {
   min-width: 220px;
 }
 
-/* Load More positioning */
+/* Loader */
+.loader {
+  text-align: center;
+  padding: 30px;
+  color: var(--muted);
+}
+
+/* Load More */
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: var(--panel-soft);
+}
+
 .load-more {
   display: block;
-  margin: 32px auto 0 auto;
+  margin: 32px auto 0;
 }
