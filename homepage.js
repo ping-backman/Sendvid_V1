@@ -1,54 +1,219 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Discover Videos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-  <div class="container">
-    <h1>Discover</h1>
+import { fetchVideos } from "/api.js";
 
-    <!-- Sticky controls bar -->
-    <div class="controls sticky">
-      <div class="filters scroll-x">
-        <button class="filter-btn" data-sort="relevance">Relevant</button>
-        <button class="filter-btn" data-sort="popular">Popular</button>
-        <button class="filter-btn" data-sort="newest">Newest</button>
-        <button class="filter-btn" data-sort="discover">Discover</button>
+/* --------------------
+   Config
+-------------------- */
+const PAGE_SIZE = 20;
+const RANDOM_BATCH = 60;
 
-        <span class="divider"></span>
+/* --------------------
+   State
+-------------------- */
+let offset = 0;
+let activeSort = "relevance";
+let activeLength = null;
+let currentQuery = "";
 
-        <button class="filter-btn" data-length="short">&lt;10m</button>
-        <button class="filter-btn" data-length="long">10–40m</button>
-        <button class="filter-btn" data-length="longest">40m+</button>
-      </div>
+const seenIds = new Set();
+let buffer = [];
+let loading = false;
 
-      <div class="search">
-        <input id="q" placeholder="Search keyword or tag">
-        <button id="clearSearch" aria-label="Clear search">×</button>
-      </div>
-    </div>
+/* --------------------
+   DOM
+-------------------- */
+const gallery = document.getElementById("gallery");
+const loader = document.getElementById("loader");
+const loadMoreBtn = document.getElementById("loadMore");
+const emptyState = document.getElementById("emptyState");
+const resultsHint = document.getElementById("resultsHint");
+const searchInput = document.getElementById("q");
+const clearBtn = document.getElementById("clearSearch");
+const backToTop = document.getElementById("backToTop");
 
-    <div id="resultsHint" class="results-hint"></div>
+/* --------------------
+   URL State
+-------------------- */
+function syncFromURL() {
+  const params = new URLSearchParams(location.search);
+  activeSort = params.get("sort") || "relevance";
+  activeLength = params.get("length");
+  currentQuery = params.get("q") || "";
 
-    <div id="gallery" class="grid"></div>
+  searchInput.value = currentQuery;
+  clearBtn.style.display = currentQuery ? "block" : "none";
 
-    <div id="emptyState" class="empty-state">
-      No results found. Try another keyword or clear filters.
-    </div>
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.classList.toggle(
+      "active",
+      (btn.dataset.sort && btn.dataset.sort === activeSort) ||
+      (btn.dataset.length && btn.dataset.length === activeLength)
+    );
+  });
+}
 
-    <div id="loader" class="loader">
-      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-    </div>
+function syncToURL() {
+  const params = new URLSearchParams();
+  if (activeSort) params.set("sort", activeSort);
+  if (activeLength) params.set("length", activeLength);
+  if (currentQuery) params.set("q", currentQuery);
+  history.replaceState({}, "", `?${params.toString()}`);
+}
 
-    <button id="loadMore" class="secondary load-more">Load More</button>
-  </div>
+/* --------------------
+   Helpers
+-------------------- */
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
 
-  <!-- Back to top -->
-  <button id="backToTop" aria-label="Back to top">↑</button>
+function render(videos) {
+  videos.forEach(v => {
+    const el = document.createElement("div");
+    el.className = "card fade-in";
+    el.innerHTML = `
+      <a href="bridge.html?id=${v.id}">
+        <img class="thumb" src="${v.thumbnail}" alt="${v.title}">
+        <div class="card-body">
+          <div class="title">${v.title}</div>
+          <div class="meta">${v.duration} • ${v.views} views</div>
+        </div>
+      </a>
+    `;
+    gallery.appendChild(el);
+  });
+}
 
-  <script type="module" src="homepage.js"></script>
-</body>
-</html>
+/* --------------------
+   Loader
+-------------------- */
+async function load(reset = false) {
+  if (loading) return;
+  loading = true;
+
+  if (reset) {
+    gallery.innerHTML = "";
+    offset = 0;
+    buffer = [];
+    seenIds.clear();
+    resultsHint.textContent = "";
+    window.scrollTo({ top: 0 });
+  }
+
+  emptyState.style.display = "none";
+  loader.style.display = "block";
+  loadMoreBtn.style.display = "none";
+
+  const randomMode =
+    activeSort === "discover" || activeLength !== null;
+
+  while (buffer.length < PAGE_SIZE) {
+    const data = await fetchVideos({
+      limit: randomMode ? RANDOM_BATCH : PAGE_SIZE,
+      offset,
+      sort: activeSort,
+      length: activeLength,
+      q: currentQuery
+    });
+
+    offset = data.nextOffset;
+
+    data.videos.forEach(v => {
+      if (!seenIds.has(v.id)) {
+        seenIds.add(v.id);
+        buffer.push(v);
+      }
+    });
+
+    if (!data.videos.length) break;
+  }
+
+  if (randomMode) shuffle(buffer);
+
+  const batch = buffer.splice(0, PAGE_SIZE);
+  render(batch);
+
+  loader.style.display = "none";
+  loading = false;
+
+  if (!gallery.children.length) {
+    emptyState.style.display = "block";
+  } else {
+    resultsHint.textContent = `Showing ${gallery.children.length} videos`;
+  }
+
+  if (buffer.length || offset) {
+    loadMoreBtn.style.display = "block";
+  }
+}
+
+/* --------------------
+   Filters
+-------------------- */
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn")
+      .forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    if (btn.dataset.sort) {
+      activeSort = btn.dataset.sort;
+      activeLength = null;
+    }
+
+    if (btn.dataset.length) {
+      activeLength = btn.dataset.length;
+      activeSort = "discover";
+    }
+
+    syncToURL();
+    load(true);
+  });
+});
+
+/* --------------------
+   Search (debounced)
+-------------------- */
+let searchTimer;
+searchInput.addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  clearBtn.style.display = searchInput.value ? "block" : "none";
+
+  searchTimer = setTimeout(() => {
+    currentQuery = searchInput.value.trim();
+    syncToURL();
+    load(true);
+  }, 400);
+});
+
+clearBtn.addEventListener("click", () => {
+  searchInput.value = "";
+  currentQuery = "";
+  clearBtn.style.display = "none";
+  syncToURL();
+  load(true);
+});
+
+/* --------------------
+   Load More
+-------------------- */
+loadMoreBtn.addEventListener("click", () => load());
+
+/* --------------------
+   Back to Top
+-------------------- */
+window.addEventListener("scroll", () => {
+  backToTop.classList.toggle("visible", window.scrollY > 500);
+});
+
+backToTop.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+/* --------------------
+   Init
+-------------------- */
+syncFromURL();
+load(true);
