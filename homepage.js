@@ -71,10 +71,13 @@ async function load(reset = false) {
   loader.style.display = "block";
   loadMoreBtn.style.display = "none";
 
+  const shouldRandomize =
+    activeSort === "discover" || activeLength !== null;
+
   // Keep fetching until we can show a full batch
   while (buffer.length < limit) {
     const data = await fetchVideos({
-      limit: 40, // fetch extra for randomness
+      limit: shouldRandomize ? 40 : limit,
       offset,
       sort: activeSort,
       length: activeLength,
@@ -93,7 +96,10 @@ async function load(reset = false) {
     if (!data.videos.length) break;
   }
 
-  shuffle(buffer);
+  // ✅ ONLY randomize when explicitly intended
+  if (shouldRandomize) {
+    shuffle(buffer);
+  }
 
   const batch = buffer.splice(0, limit);
   render(batch);
@@ -123,7 +129,7 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
 
     if (btn.dataset.length) {
       activeLength = btn.dataset.length;
-      activeSort = "discover"; // length = constrained discover
+      activeSort = "discover"; // constrained discover
     }
 
     load(true);
@@ -139,7 +145,7 @@ searchInput.addEventListener("input", () => {
   searchTimer = setTimeout(() => {
     currentQuery = searchInput.value.trim();
     load(true);
-  }, 400); // ← debounce delay
+  }, 400);
 });
 
 /* --------------------
