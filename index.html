@@ -26,13 +26,21 @@
 
       <div class="search">
         <input id="q" placeholder="Search keyword or tag here">
-        
+        <button id="clearSearch" aria-label="Clear search">×</button>
       </div>
     </div>
 
+    <div id="resultsHint" class="results-hint"></div>
+
     <div id="gallery" class="grid"></div>
 
-    <div id="loader" class="loader">Loading…</div>
+    <div id="emptyState" class="empty-state">
+      No results found. Try another keyword or clear filters.
+    </div>
+
+    <div id="loader" class="loader">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>
 
     <button id="loadMore" class="secondary load-more">Load More</button>
   </div>
