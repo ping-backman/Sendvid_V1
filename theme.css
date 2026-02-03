@@ -186,7 +186,7 @@ button.secondary {
   margin: 32px auto 0;
 }
 
-.loader {
+/* .loader {
   text-align: center;
   padding: 30px;
   color: var(--muted);
@@ -224,5 +224,5 @@ button.secondary {
   cursor: pointer;
   display: none;
   font-size: 16px;
-}
+} */
 
