@@ -185,3 +185,25 @@ button.secondary {
   display: block;
   margin: 32px auto 0;
 }
+.loader {
+  text-align: center;
+  padding: 30px;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.loader.visible {
+  opacity: 1;
+}
+
+.loader::after {
+  content: " …";
+  animation: dots 1.4s infinite;
+}
+
+@keyframes dots {
+  0% { content: " ."; }
+  33% { content: " .."; }
+  66% { content: " ..."; }
+}
