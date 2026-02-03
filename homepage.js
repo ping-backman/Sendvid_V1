@@ -1,174 +1,54 @@
-import { fetchVideos } from "/api.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Discover Videos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="theme.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Discover</h1>
 
-/* --------------------
-   State
--------------------- */
-const limit = 20;
-let offset = 0;
+    <!-- Sticky controls bar -->
+    <div class="controls sticky">
+      <div class="filters scroll-x">
+        <button class="filter-btn" data-sort="relevance">Relevant</button>
+        <button class="filter-btn" data-sort="popular">Popular</button>
+        <button class="filter-btn" data-sort="newest">Newest</button>
+        <button class="filter-btn" data-sort="discover">Discover</button>
 
-let activeSort = "relevance";
-let activeLength = null;
-let currentQuery = "";
+        <span class="divider"></span>
 
-const seenIds = new Set();
-let buffer = [];
+        <button class="filter-btn" data-length="short">&lt;10m</button>
+        <button class="filter-btn" data-length="long">10–40m</button>
+        <button class="filter-btn" data-length="longest">40m+</button>
+      </div>
 
-let searchTimer = null;
+      <div class="search">
+        <input id="q" placeholder="Search keyword or tag">
+        <button id="clearSearch" aria-label="Clear search">×</button>
+      </div>
+    </div>
 
-/* --------------------
-   DOM
--------------------- */
-const gallery = document.getElementById("gallery");
-const loader = document.getElementById("loader");
-const searchInput = document.getElementById("q");
-const loadMoreBtn = document.getElementById("loadMore");
-const clearBtn = document.getElementById("clearSearch");
-const emptyState = document.getElementById("emptyState");
-const resultsHint = document.getElementById("resultsHint");
+    <div id="resultsHint" class="results-hint"></div>
 
-/* --------------------
-   Helpers
--------------------- */
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-}
+    <div id="gallery" class="grid"></div>
 
-function render(videos) {
-  videos.forEach(v => {
-    const el = document.createElement("div");
-    el.className = "card fade-in";
-    el.innerHTML = `
-      <a href="bridge.html?id=${v.id}">
-        <img class="thumb" src="${v.thumbnail}" alt="${v.title}">
-        <div class="card-body">
-          <div class="title">${v.title}</div>
-          <div class="meta">${v.duration} • ${v.views} views</div>
-        </div>
-      </a>
-    `;
-    gallery.appendChild(el);
-  });
-}
+    <div id="emptyState" class="empty-state">
+      No results found. Try another keyword or clear filters.
+    </div>
 
-/* --------------------
-   Core Loader
--------------------- */
-async function load(reset = false) {
-  if (reset) {
-    gallery.innerHTML = "";
-    offset = 0;
-    buffer = [];
-    seenIds.clear();
-    resultsHint.textContent = "";
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+    <div id="loader" class="loader">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>
 
-  emptyState.style.display = "none";
-  loader.style.display = "block";
-  loadMoreBtn.style.display = "none";
+    <button id="loadMore" class="secondary load-more">Load More</button>
+  </div>
 
-  const shouldRandomize =
-    activeSort === "discover" || activeLength !== null;
+  <!-- Back to top -->
+  <button id="backToTop" aria-label="Back to top">↑</button>
 
-  while (buffer.length < limit) {
-    const data = await fetchVideos({
-      limit: shouldRandomize ? 40 : limit,
-      offset,
-      sort: activeSort,
-      length: activeLength,
-      q: currentQuery
-    });
-
-    offset = data.nextOffset;
-
-    data.videos.forEach(v => {
-      if (!seenIds.has(v.id)) {
-        seenIds.add(v.id);
-        buffer.push(v);
-      }
-    });
-
-    if (!data.videos.length) break;
-  }
-
-  if (shouldRandomize) shuffle(buffer);
-
-  const batch = buffer.splice(0, limit);
-  render(batch);
-
-  loader.style.display = "none";
-
-  if (!gallery.children.length) {
-    emptyState.style.display = "block";
-  } else {
-    resultsHint.textContent = `Showing ${gallery.children.length} videos`;
-  }
-
-  if (buffer.length || offset) {
-    loadMoreBtn.style.display = "block";
-  }
-}
-
-/* --------------------
-   Filters
--------------------- */
-document.querySelectorAll(".filter-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".filter-btn")
-      .forEach(b => b.classList.remove("active"));
-
-    btn.classList.add("active");
-
-    if (btn.dataset.sort) {
-      activeSort = btn.dataset.sort;
-      activeLength = null;
-    }
-
-    if (btn.dataset.length) {
-      activeLength = btn.dataset.length;
-      activeSort = "discover";
-    }
-
-    load(true);
-  });
-});
-
-/* --------------------
-   Search
--------------------- */
-searchInput.addEventListener("input", () => {
-  clearTimeout(searchTimer);
-  clearBtn.style.display = searchInput.value ? "block" : "none";
-
-  searchTimer = setTimeout(() => {
-    currentQuery = searchInput.value.trim();
-    load(true);
-  }, 400);
-});
-
-clearBtn.addEventListener("click", () => {
-  searchInput.value = "";
-  currentQuery = "";
-  clearBtn.style.display = "none";
-  load(true);
-});
-
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape") clearBtn.click();
-  if (e.key === "Enter" && document.activeElement === searchInput) {
-    load(true);
-  }
-});
-
-/* --------------------
-   Load More
--------------------- */
-loadMoreBtn.addEventListener("click", () => load());
-
-/* --------------------
-   Init
--------------------- */
-load(true);
+  <script type="module" src="homepage.js"></script>
+</body>
+</html>
