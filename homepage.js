@@ -10,13 +10,9 @@ let activeSort = "relevance";
 let activeLength = null;
 let currentQuery = "";
 
-// Session-level memory (prevents repeats)
 const seenIds = new Set();
-
-// Buffer for randomization
 let buffer = [];
 
-// Debounce timer
 let searchTimer = null;
 
 /* --------------------
@@ -26,12 +22,13 @@ const gallery = document.getElementById("gallery");
 const loader = document.getElementById("loader");
 const searchInput = document.getElementById("q");
 const loadMoreBtn = document.getElementById("loadMore");
+const clearBtn = document.getElementById("clearSearch");
+const emptyState = document.getElementById("emptyState");
+const resultsHint = document.getElementById("resultsHint");
 
 /* --------------------
-   Utilities
+   Helpers
 -------------------- */
-
-// Fisher–Yates shuffle (true random)
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -39,7 +36,6 @@ function shuffle(arr) {
   }
 }
 
-// Render cards
 function render(videos) {
   videos.forEach(v => {
     const el = document.createElement("div");
@@ -66,15 +62,17 @@ async function load(reset = false) {
     offset = 0;
     buffer = [];
     seenIds.clear();
+    resultsHint.textContent = "";
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  emptyState.style.display = "none";
   loader.style.display = "block";
   loadMoreBtn.style.display = "none";
 
   const shouldRandomize =
     activeSort === "discover" || activeLength !== null;
 
-  // Keep fetching until we can show a full batch
   while (buffer.length < limit) {
     const data = await fetchVideos({
       limit: shouldRandomize ? 40 : limit,
@@ -96,15 +94,18 @@ async function load(reset = false) {
     if (!data.videos.length) break;
   }
 
-  // ✅ ONLY randomize when explicitly intended
-  if (shouldRandomize) {
-    shuffle(buffer);
-  }
+  if (shouldRandomize) shuffle(buffer);
 
   const batch = buffer.splice(0, limit);
   render(batch);
 
   loader.style.display = "none";
+
+  if (!gallery.children.length) {
+    emptyState.style.display = "block";
+  } else {
+    resultsHint.textContent = `Showing ${gallery.children.length} videos`;
+  }
 
   if (buffer.length || offset) {
     loadMoreBtn.style.display = "block";
@@ -116,8 +117,7 @@ async function load(reset = false) {
 -------------------- */
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    document
-      .querySelectorAll(".filter-btn")
+    document.querySelectorAll(".filter-btn")
       .forEach(b => b.classList.remove("active"));
 
     btn.classList.add("active");
@@ -129,7 +129,7 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
 
     if (btn.dataset.length) {
       activeLength = btn.dataset.length;
-      activeSort = "discover"; // constrained discover
+      activeSort = "discover";
     }
 
     load(true);
@@ -137,15 +137,30 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
 });
 
 /* --------------------
-   Live Search (Debounced)
+   Search
 -------------------- */
 searchInput.addEventListener("input", () => {
   clearTimeout(searchTimer);
+  clearBtn.style.display = searchInput.value ? "block" : "none";
 
   searchTimer = setTimeout(() => {
     currentQuery = searchInput.value.trim();
     load(true);
   }, 400);
+});
+
+clearBtn.addEventListener("click", () => {
+  searchInput.value = "";
+  currentQuery = "";
+  clearBtn.style.display = "none";
+  load(true);
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") clearBtn.click();
+  if (e.key === "Enter" && document.activeElement === searchInput) {
+    load(true);
+  }
 });
 
 /* --------------------
@@ -154,6 +169,6 @@ searchInput.addEventListener("input", () => {
 loadMoreBtn.addEventListener("click", () => load());
 
 /* --------------------
-   Initial Load
+   Init
 -------------------- */
 load(true);
