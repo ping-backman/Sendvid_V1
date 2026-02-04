@@ -1,24 +1,15 @@
 import { fetchVideos } from "/api.js";
 
-/* --------------------
-   Config
--------------------- */
 const PAGE_SIZE = 20;
 
-/* --------------------
-   State
--------------------- */
 let offset = 0;
 let activeSort = "relevance";
 let activeLength = null;
 let currentQuery = "";
-
-const seenIds = new Set();
 let loading = false;
 
-/* --------------------
-   DOM
--------------------- */
+const seenIds = new Set();
+
 const gallery = document.getElementById("gallery");
 const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
@@ -28,9 +19,7 @@ const searchInput = document.getElementById("q");
 const clearBtn = document.getElementById("clearSearch");
 const backToTop = document.getElementById("backToTop");
 
-/* --------------------
-   URL Sync
--------------------- */
+/* ---------- URL sync ---------- */
 function syncFromURL() {
   const p = new URLSearchParams(location.search);
   activeSort = p.get("sort") || "relevance";
@@ -41,13 +30,10 @@ function syncFromURL() {
   clearBtn.style.display = currentQuery ? "block" : "none";
 
   document.querySelectorAll(".filter-btn").forEach(btn => {
-    btn.classList.remove("active");
-    if (btn.dataset.sort && btn.dataset.sort === activeSort) {
-      btn.classList.add("active");
-    }
-    if (btn.dataset.length && btn.dataset.length === activeLength) {
-      btn.classList.add("active");
-    }
+    btn.classList.toggle(
+      "active",
+      btn.dataset.sort === activeSort || btn.dataset.length === activeLength
+    );
   });
 }
 
@@ -59,9 +45,7 @@ function syncToURL() {
   history.replaceState({}, "", `?${p}`);
 }
 
-/* --------------------
-   Helpers
--------------------- */
+/* ---------- Helpers ---------- */
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -69,6 +53,41 @@ function shuffle(arr) {
   }
 }
 
+/* ---------- Fetch unique videos ---------- */
+async function fetchUniqueBatch(reset = false) {
+  let collected = [];
+
+  while (collected.length < PAGE_SIZE) {
+    const data = await fetchVideos({
+      limit: PAGE_SIZE,
+      offset,
+      sort: activeSort,
+      length: activeLength,
+      q: currentQuery
+    });
+
+    offset = data.nextOffset;
+
+    if (!data.videos.length) break;
+
+    for (const v of data.videos) {
+      if (!seenIds.has(v.id)) {
+        seenIds.add(v.id);
+        collected.push(v);
+      }
+    }
+
+    if (!data.nextOffset) break;
+  }
+
+  if (activeSort === "discover" || activeLength) {
+    shuffle(collected);
+  }
+
+  return collected;
+}
+
+/* ---------- Render ---------- */
 function render(videos) {
   videos.forEach(v => {
     const el = document.createElement("div");
@@ -86,9 +105,7 @@ function render(videos) {
   });
 }
 
-/* --------------------
-   Loader
--------------------- */
+/* ---------- Load ---------- */
 async function load(reset = false) {
   if (loading) return;
   loading = true;
@@ -105,25 +122,7 @@ async function load(reset = false) {
   loadMoreBtn.style.display = "none";
   emptyState.style.display = "none";
 
-  const data = await fetchVideos({
-    limit: PAGE_SIZE,
-    offset,
-    sort: activeSort,
-    length: activeLength,
-    q: currentQuery
-  });
-
-  offset = data.nextOffset;
-
-  let batch = data.videos.filter(v => {
-    if (seenIds.has(v.id)) return false;
-    seenIds.add(v.id);
-    return true;
-  });
-
-  if (activeSort === "discover" || activeLength) {
-    shuffle(batch);
-  }
+  const batch = await fetchUniqueBatch(reset);
 
   render(batch);
 
@@ -136,19 +135,15 @@ async function load(reset = false) {
     resultsHint.textContent = `Showing ${gallery.children.length} videos`;
   }
 
-  if (data.videos.length) {
+  if (batch.length === PAGE_SIZE) {
     loadMoreBtn.style.display = "block";
   }
 }
 
-/* --------------------
-   Filters
--------------------- */
+/* ---------- Filters ---------- */
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".filter-btn")
-      .forEach(b => b.classList.remove("active"));
-
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
 
     if (btn.dataset.sort) {
@@ -166,9 +161,7 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
   });
 });
 
-/* --------------------
-   Search
--------------------- */
+/* ---------- Search ---------- */
 let searchTimer;
 searchInput.addEventListener("input", () => {
   clearTimeout(searchTimer);
@@ -189,14 +182,10 @@ clearBtn.addEventListener("click", () => {
   load(true);
 });
 
-/* --------------------
-   Load More
--------------------- */
+/* ---------- Load more ---------- */
 loadMoreBtn.addEventListener("click", () => load());
 
-/* --------------------
-   Back to Top
--------------------- */
+/* ---------- Back to top ---------- */
 window.addEventListener("scroll", () => {
   backToTop.classList.toggle("visible", window.scrollY > 500);
 });
@@ -205,8 +194,6 @@ backToTop.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
-/* --------------------
-   Init
--------------------- */
+/* ---------- Init ---------- */
 syncFromURL();
 load(true);
