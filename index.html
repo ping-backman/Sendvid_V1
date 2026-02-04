@@ -10,28 +10,29 @@
   <div class="container">
     <h1>Discover</h1>
 
-    <!-- Sticky controls bar -->
+    <!-- Sticky controls -->
     <div class="controls sticky">
       <div class="filters scroll-x">
         <button class="filter-btn" data-sort="relevance">Relevant</button>
         <button class="filter-btn" data-sort="popular">Popular</button>
         <button class="filter-btn" data-sort="newest">Newest</button>
         <button class="filter-btn" data-sort="discover">Discover</button>
-
         <span class="divider"></span>
-
         <button class="filter-btn" data-length="short">&lt;10m</button>
         <button class="filter-btn" data-length="long">10–40m</button>
         <button class="filter-btn" data-length="longest">40m+</button>
       </div>
+    </div>
+
+    <!-- Secondary sticky row (mobile) -->
+    <div class="sub-controls sticky">
+      <div id="resultsHint" class="results-hint"></div>
 
       <div class="search">
         <input id="q" placeholder="Search keyword or tag">
         <button id="clearSearch" aria-label="Clear search">×</button>
       </div>
     </div>
-
-    <div id="resultsHint" class="results-hint"></div>
 
     <div id="gallery" class="grid"></div>
 
@@ -46,7 +47,6 @@
     <button id="loadMore" class="secondary load-more">Load More</button>
   </div>
 
-  <!-- Back to top -->
   <button id="backToTop" aria-label="Back to top">↑</button>
 
   <script type="module" src="homepage.js"></script>
