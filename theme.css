@@ -268,3 +268,39 @@ button.secondary {
   pointer-events: auto;
   transform: translateY(0);
 }
+/* --- existing styles unchanged above --- */
+
+/* Secondary sticky row */
+.sub-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 12px;
+  background: rgba(15,15,18,.95);
+  backdrop-filter: blur(6px);
+  z-index: 19;
+  position: sticky;
+  top: 52px;
+}
+
+/* Mobile layout */
+@media (max-width: 900px) {
+  .controls {
+    padding-bottom: 6px;
+  }
+
+  .sub-controls {
+    flex-direction: column;
+    align-items: stretch;
+    top: 48px;
+  }
+
+  .search input {
+    width: 100%;
+  }
+
+  .results-hint {
+    text-align: center;
+  }
+}
