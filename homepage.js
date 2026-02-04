@@ -4,7 +4,6 @@ import { fetchVideos } from "/api.js";
    Config
 -------------------- */
 const PAGE_SIZE = 20;
-const RANDOM_BATCH = 60;
 
 /* --------------------
    State
@@ -15,7 +14,6 @@ let activeLength = null;
 let currentQuery = "";
 
 const seenIds = new Set();
-let buffer = [];
 let loading = false;
 
 /* --------------------
@@ -31,32 +29,34 @@ const clearBtn = document.getElementById("clearSearch");
 const backToTop = document.getElementById("backToTop");
 
 /* --------------------
-   URL State
+   URL Sync
 -------------------- */
 function syncFromURL() {
-  const params = new URLSearchParams(location.search);
-  activeSort = params.get("sort") || "relevance";
-  activeLength = params.get("length");
-  currentQuery = params.get("q") || "";
+  const p = new URLSearchParams(location.search);
+  activeSort = p.get("sort") || "relevance";
+  activeLength = p.get("length");
+  currentQuery = p.get("q") || "";
 
   searchInput.value = currentQuery;
   clearBtn.style.display = currentQuery ? "block" : "none";
 
   document.querySelectorAll(".filter-btn").forEach(btn => {
-    btn.classList.toggle(
-      "active",
-      (btn.dataset.sort && btn.dataset.sort === activeSort) ||
-      (btn.dataset.length && btn.dataset.length === activeLength)
-    );
+    btn.classList.remove("active");
+    if (btn.dataset.sort && btn.dataset.sort === activeSort) {
+      btn.classList.add("active");
+    }
+    if (btn.dataset.length && btn.dataset.length === activeLength) {
+      btn.classList.add("active");
+    }
   });
 }
 
 function syncToURL() {
-  const params = new URLSearchParams();
-  if (activeSort) params.set("sort", activeSort);
-  if (activeLength) params.set("length", activeLength);
-  if (currentQuery) params.set("q", currentQuery);
-  history.replaceState({}, "", `?${params.toString()}`);
+  const p = new URLSearchParams();
+  if (activeSort) p.set("sort", activeSort);
+  if (activeLength) p.set("length", activeLength);
+  if (currentQuery) p.set("q", currentQuery);
+  history.replaceState({}, "", `?${p}`);
 }
 
 /* --------------------
@@ -96,43 +96,35 @@ async function load(reset = false) {
   if (reset) {
     gallery.innerHTML = "";
     offset = 0;
-    buffer = [];
     seenIds.clear();
     resultsHint.textContent = "";
     window.scrollTo({ top: 0 });
   }
 
-  emptyState.style.display = "none";
   loader.style.display = "block";
   loadMoreBtn.style.display = "none";
+  emptyState.style.display = "none";
 
-  const randomMode =
-    activeSort === "discover" || activeLength !== null;
+  const data = await fetchVideos({
+    limit: PAGE_SIZE,
+    offset,
+    sort: activeSort,
+    length: activeLength,
+    q: currentQuery
+  });
 
-  while (buffer.length < PAGE_SIZE) {
-    const data = await fetchVideos({
-      limit: randomMode ? RANDOM_BATCH : PAGE_SIZE,
-      offset,
-      sort: activeSort,
-      length: activeLength,
-      q: currentQuery
-    });
+  offset = data.nextOffset;
 
-    offset = data.nextOffset;
+  let batch = data.videos.filter(v => {
+    if (seenIds.has(v.id)) return false;
+    seenIds.add(v.id);
+    return true;
+  });
 
-    data.videos.forEach(v => {
-      if (!seenIds.has(v.id)) {
-        seenIds.add(v.id);
-        buffer.push(v);
-      }
-    });
-
-    if (!data.videos.length) break;
+  if (activeSort === "discover" || activeLength) {
+    shuffle(batch);
   }
 
-  if (randomMode) shuffle(buffer);
-
-  const batch = buffer.splice(0, PAGE_SIZE);
   render(batch);
 
   loader.style.display = "none";
@@ -144,7 +136,7 @@ async function load(reset = false) {
     resultsHint.textContent = `Showing ${gallery.children.length} videos`;
   }
 
-  if (buffer.length || offset) {
+  if (data.videos.length) {
     loadMoreBtn.style.display = "block";
   }
 }
@@ -156,6 +148,7 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".filter-btn")
       .forEach(b => b.classList.remove("active"));
+
     btn.classList.add("active");
 
     if (btn.dataset.sort) {
@@ -174,7 +167,7 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
 });
 
 /* --------------------
-   Search (debounced)
+   Search
 -------------------- */
 let searchTimer;
 searchInput.addEventListener("input", () => {
