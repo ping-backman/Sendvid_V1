@@ -26,7 +26,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ================= GRID ================= */
-
 .grid {
   display: grid;
   gap: 16px;
@@ -40,7 +39,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ================= CARDS ================= */
-
 .card {
   background: var(--panel);
   border-radius: 10px;
@@ -59,14 +57,22 @@ a { color: inherit; text-decoration: none; }
   filter: blur(0.4px);
 }
 
-/* FULL 16:9 thumbnails */
+/* ================= THUMBNAILS ================= */
 .thumb {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  height: 240px; /* restored desktop height */
   object-fit: cover;
   display: block;
 }
 
+@media (max-width: 900px) {
+  .thumb {
+    height: 160px; /* mobile height */
+    object-fit: cover;
+  }
+}
+
+/* Card content */
 .card-body {
   padding: 10px;
 }
@@ -82,8 +88,49 @@ a { color: inherit; text-decoration: none; }
   color: var(--muted);
 }
 
-/* ================= STICKY CONTROLS ================= */
+/* ================= ANIMATIONS ================= */
+.fade-in {
+  animation: fadeUp 0.35s ease forwards;
+}
 
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Skeleton loader for thumbnails */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--panel) 25%,
+    var(--panel-soft) 37%,
+    var(--panel) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 10px;
+  width: 100%;
+  height: 240px;
+}
+
+@media (max-width: 900px) {
+  .skeleton {
+    height: 160px;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ================= STICKY CONTROLS ================= */
 .controls-desktop,
 .controls-mobile {
   position: sticky;
@@ -109,7 +156,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ================= MOBILE ================= */
-
 .controls-mobile {
   display: none;
   padding-top: 10px;
@@ -131,6 +177,8 @@ a { color: inherit; text-decoration: none; }
 .filters-scroll {
   overflow-x: auto;
   padding: 0 6px;
+  display: flex;
+  gap: 4px;
   scrollbar-width: none;
 }
 
@@ -144,7 +192,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ================= FILTERS ================= */
-
 .filters {
   display: flex;
   gap: 8px;
@@ -172,8 +219,30 @@ a { color: inherit; text-decoration: none; }
   padding: 0 4px;
 }
 
-/* ================= SEARCH ================= */
+/* ================= MOBILE FILTER ARROWS ================= */
+.filters-scroll-wrapper::before,
+.filters-scroll-wrapper::after {
+  content: '<';
+  font-size: 18px;
+  color: var(--muted);
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
 
+.filters-scroll-wrapper::after {
+  content: '>';
+  right: 0;
+}
+
+.filters .divider-discover {
+  margin: 0 6px;
+  font-weight: bold;
+  color: var(--muted);
+}
+
+/* ================= SEARCH ================= */
 .search-desktop {
   position: relative;
   min-width: 220px;
@@ -188,13 +257,8 @@ a { color: inherit; text-decoration: none; }
   width: 100%;
 }
 
-.search-desktop input {
-  padding: 8px 32px 8px 12px;
-}
-
-.search-mobile input {
-  padding: 10px 36px 10px 12px;
-}
+.search-desktop input { padding: 8px 32px 8px 12px; }
+.search-mobile input { padding: 10px 36px 10px 12px; }
 
 .search-desktop button,
 .search-mobile button {
@@ -211,7 +275,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ================= RESULTS HINT ================= */
-
 .results-hint {
   font-size: 13px;
   color: var(--muted);
@@ -219,7 +282,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ================= LOADER ================= */
-
 .loader {
   text-align: center;
   padding: 30px;
@@ -242,7 +304,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ================= EMPTY STATE ================= */
-
 .empty-state {
   display: none;
   text-align: center;
@@ -251,7 +312,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ================= BUTTONS ================= */
-
 button {
   background: var(--accent);
   color: #fff;
@@ -271,7 +331,6 @@ button.secondary {
 }
 
 /* ================= BACK TO TOP ================= */
-
 #backToTop {
   position: fixed;
   right: 16px;
@@ -297,7 +356,6 @@ button.secondary {
 }
 
 /* ================= RESPONSIVE ================= */
-
 @media (max-width: 900px) {
   .controls-desktop { display: none; }
   .controls-mobile { display: block; }
