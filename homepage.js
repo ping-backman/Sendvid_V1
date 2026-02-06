@@ -1,7 +1,6 @@
 import { fetchVideos } from "/api.js";
 
 const PAGE_SIZE = 20;
-
 let offset = 0;
 let activeSort = "relevance";
 let activeLength = null;
@@ -118,9 +117,11 @@ function render(videos) {
       </a>
     `;
 
+    // Mark watched immediately on click
     el.querySelector("a").addEventListener("click", () => {
       watched.add(v.id);
       localStorage.setItem("watched", JSON.stringify([...watched]));
+      el.classList.add("watched");
     });
 
     gallery.appendChild(el);
@@ -151,13 +152,8 @@ async function load(reset = false) {
   loader.style.display = "none";
   loading = false;
 
-  if (!gallery.children.length) {
-    emptyState.style.display = "block";
-  }
-
-  if (batch.length === PAGE_SIZE) {
-    loadMoreBtn.style.display = "block";
-  }
+  if (!gallery.children.length) emptyState.style.display = "block";
+  if (batch.length === PAGE_SIZE) loadMoreBtn.style.display = "block";
 }
 
 /* ---------- Filters ---------- */
@@ -183,7 +179,6 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
 
 /* ---------- Search ---------- */
 let searchTimer;
-
 function handleSearch(val) {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
@@ -223,10 +218,7 @@ loadMoreBtn.addEventListener("click", () => load());
 /* ---------- Back to top ---------- */
 window.addEventListener("scroll", () => {
   backToTop.classList.toggle("visible", window.scrollY > 500);
-
-  if (desktopControls) {
-    desktopControls.classList.toggle("compact", window.scrollY > 40);
-  }
+  if (desktopControls) desktopControls.classList.toggle("compact", window.scrollY > 40);
 });
 
 backToTop.addEventListener("click", () => {
