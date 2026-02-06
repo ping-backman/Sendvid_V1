@@ -110,11 +110,27 @@ a {
 
 .controls-desktop {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 12px;
   padding: 12px 0;
   margin-bottom: 16px;
+}
+
+/* ordering for desktop layout */
+.controls-desktop .search {
+  order: 1;
+}
+
+.controls-desktop .filters {
+  order: 2;
+}
+
+.controls-desktop .results-hint {
+  order: 3;
+}
+
+.controls-desktop .divider {
+  order: 4;
 }
 
 /* ================= MOBILE CONTROLS ================= */
@@ -126,12 +142,25 @@ a {
 
 /* horizontal filters (mobile) */
 .filters-scroll {
+  position: relative;
   overflow-x: auto;
   scrollbar-width: none;
 }
 
 .filters-scroll::-webkit-scrollbar {
   display: none;
+}
+
+/* affordance hint (edge fade) */
+.filters-scroll::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(to left, rgba(15,17,21,0.95), transparent);
 }
 
 /* second sticky row on mobile */
@@ -177,7 +206,8 @@ a {
 
 .search {
   position: relative;
-  flex: 1;
+  flex: 0 0 auto;
+  max-width: 220px;
 }
 
 .search input {
@@ -215,7 +245,7 @@ a {
 .loader {
   text-align: center;
   padding: 30px;
-  display: none;
+  display: block;
 }
 
 .loader .dot {
@@ -223,7 +253,7 @@ a {
   width: 6px;
   height: 6px;
   margin: 0 2px;
-  background: var(--muted);
+  background: var(--accent);
   border-radius: 50%;
   animation: bounce 1.4s infinite both;
 }
