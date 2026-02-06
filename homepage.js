@@ -25,6 +25,8 @@ const searchMobile = document.getElementById("q-mobile");
 const clearDesktop = document.getElementById("clearSearchDesktop");
 const clearMobile = document.getElementById("clearSearchMobile");
 
+const desktopControls = document.querySelector(".controls-desktop");
+
 /* ---------- URL sync ---------- */
 function syncFromURL() {
   const p = new URLSearchParams(location.search);
@@ -131,7 +133,6 @@ function render(videos) {
 async function load(reset = false) {
   if (loading) return;
   loading = true;
-  document.body.classList.add("loading");
 
   if (reset) {
     gallery.innerHTML = "";
@@ -149,7 +150,6 @@ async function load(reset = false) {
 
   loader.style.display = "none";
   loading = false;
-  document.body.classList.remove("loading");
 
   if (!gallery.children.length) {
     emptyState.style.display = "block";
@@ -223,6 +223,10 @@ loadMoreBtn.addEventListener("click", () => load());
 /* ---------- Back to top ---------- */
 window.addEventListener("scroll", () => {
   backToTop.classList.toggle("visible", window.scrollY > 500);
+
+  if (desktopControls) {
+    desktopControls.classList.toggle("compact", window.scrollY > 40);
+  }
 });
 
 backToTop.addEventListener("click", () => {
