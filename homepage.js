@@ -1,6 +1,7 @@
 import { fetchVideos } from "/api.js";
 
 const PAGE_SIZE = 20;
+
 let offset = 0;
 let activeSort = "relevance";
 let activeLength = null;
@@ -29,6 +30,7 @@ const desktopControls = document.querySelector(".controls-desktop");
 /* ---------- URL sync ---------- */
 function syncFromURL() {
   const p = new URLSearchParams(location.search);
+
   activeSort = p.get("sort") || "relevance";
   activeLength = p.get("length");
   currentQuery = p.get("q") || "";
@@ -42,17 +44,18 @@ function syncFromURL() {
   document.querySelectorAll(".filter-btn").forEach(btn => {
     btn.classList.toggle(
       "active",
-      btn.dataset.sort === activeSort || btn.dataset.length === activeLength
+      btn.dataset.sort === activeSort ||
+      btn.dataset.length === activeLength
     );
   });
 }
 
 function syncToURL() {
   const p = new URLSearchParams();
-  if (activeSort) p.set("sort", activeSort);
+  p.set("sort", activeSort);
   if (activeLength) p.set("length", activeLength);
   if (currentQuery) p.set("q", currentQuery);
-  history.replaceState({}, "", `?${p}`);
+  history.replaceState({}, "", `?${p.toString()}`);
 }
 
 /* ---------- Shuffle ---------- */
@@ -66,6 +69,7 @@ function shuffle(arr) {
 /* ---------- Fetch unique ---------- */
 async function fetchUniqueBatch() {
   const collected = [];
+
   while (collected.length < PAGE_SIZE) {
     const data = await fetchVideos({
       limit: PAGE_SIZE,
@@ -89,7 +93,7 @@ async function fetchUniqueBatch() {
     if (!data.nextOffset) break;
   }
 
-  if (activeSort === "discover" || activeLength) shuffle(collected);
+  if (activeSort === "discover") shuffle(collected);
   return collected;
 }
 
@@ -116,26 +120,28 @@ function render(videos) {
       </a>
     `;
 
-    const aTag = el.querySelector("a");
-    // ----- Swipe detection -----
+    const link = el.querySelector("a");
+
+    // ----- Touch / scroll protection -----
+    el._isDragging = false;
+
     el.addEventListener("touchstart", e => {
-      el._touchStartX = e.touches[0].clientX;
-      el._touchStartY = e.touches[0].clientY;
+      el._startX = e.touches[0].clientX;
+      el._startY = e.touches[0].clientY;
       el._isDragging = false;
-    });
+    }, { passive: true });
 
     el.addEventListener("touchmove", e => {
-      const dx = Math.abs(e.touches[0].clientX - el._touchStartX);
-      const dy = Math.abs(e.touches[0].clientY - el._touchStartY);
+      const dx = Math.abs(e.touches[0].clientX - el._startX);
+      const dy = Math.abs(e.touches[0].clientY - el._startY);
       if (dx > 10 || dy > 10) el._isDragging = true;
-    });
+    }, { passive: true });
 
-    el.addEventListener("touchend", e => {
-      setTimeout(() => { el._isDragging = false; }, 50);
-    });
-
-    aTag.addEventListener("click", e => {
-      if (el._isDragging) return; // ignore taps during scroll
+    link.addEventListener("click", e => {
+      if (el._isDragging) {
+        e.preventDefault();
+        return;
+      }
       watched.add(v.id);
       localStorage.setItem("watched", JSON.stringify([...watched]));
       el.classList.add("watched");
@@ -181,12 +187,10 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
 
     if (btn.dataset.sort) {
       activeSort = btn.dataset.sort;
-      activeLength = null;
     }
 
     if (btn.dataset.length) {
       activeLength = btn.dataset.length;
-      activeSort = "discover";
     }
 
     syncToURL();
