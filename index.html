@@ -7,52 +7,70 @@
   <link rel="stylesheet" href="theme.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Discover</h1>
 
-    <!-- Sticky: Search + Filters (desktop), Search only (mobile) -->
-    <div class="controls sticky">
-      <div class="search">
-        <input id="q" placeholder="Search keyword or tag">
-        <button id="clearSearch" aria-label="Clear search">×</button>
-      </div>
+<div class="container">
+  <h1>Discover</h1>
 
-      <div class="filters-wrap">
-        <span class="scroll-hint left">‹</span>
-        <div class="filters scroll-x">
-          <button class="filter-btn" data-sort="relevance">Relevant</button>
-          <button class="filter-btn" data-sort="popular">Popular</button>
-          <button class="filter-btn" data-sort="newest">Newest</button>
-          <button class="filter-btn" data-sort="discover">Discover</button>
-          <span class="divider"></span>
-          <button class="filter-btn" data-length="short">&lt;10m</button>
-          <button class="filter-btn" data-length="long">10–40m</button>
-          <button class="filter-btn" data-length="longest">40m+</button>
-        </div>
-        <span class="scroll-hint right">›</span>
-      </div>
+  <!-- ================= DESKTOP CONTROLS ================= -->
+  <div class="controls-desktop sticky">
+    <div class="search">
+      <input id="q-desktop" placeholder="Search keyword or tag">
+      <button id="clearSearchDesktop" aria-label="Clear search">×</button>
     </div>
 
-    <!-- Sticky: Results hint (always slim) -->
-    <div class="results-bar sticky">
-      <div id="resultsHint" class="results-hint"></div>
+    <div class="filters">
+      <button class="filter-btn" data-sort="relevance">Relevant</button>
+      <button class="filter-btn" data-sort="popular">Popular</button>
+      <button class="filter-btn" data-sort="newest">Newest</button>
+      <button class="filter-btn" data-sort="discover">Discover</button>
+      <span class="divider"></span>
+      <button class="filter-btn" data-length="short">&lt;10m</button>
+      <button class="filter-btn" data-length="long">10–40m</button>
+      <button class="filter-btn" data-length="longest">40m+</button>
     </div>
-
-    <div id="gallery" class="grid"></div>
-
-    <div id="emptyState" class="empty-state">
-      No results found. Try another keyword or clear filters.
-    </div>
-
-    <div id="loader" class="loader">
-      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-    </div>
-
-    <button id="loadMore" class="secondary load-more">Load More</button>
   </div>
 
-  <button id="backToTop" aria-label="Back to top">↑</button>
+  <!-- ================= MOBILE CONTROLS ================= -->
+  <div class="controls-mobile sticky">
+    <div class="filters-scroll">
+      <div class="filters">
+        <button class="filter-btn" data-sort="relevance">Relevant</button>
+        <button class="filter-btn" data-sort="popular">Popular</button>
+        <button class="filter-btn" data-sort="newest">Newest</button>
+        <button class="filter-btn" data-sort="discover">Discover</button>
+        <span class="divider"></span>
+        <button class="filter-btn" data-length="short">&lt;10m</button>
+        <button class="filter-btn" data-length="long">10–40m</button>
+        <button class="filter-btn" data-length="longest">40m+</button>
+      </div>
+    </div>
 
-  <script type="module" src="homepage.js"></script>
+    <div class="mobile-meta">
+      <div id="resultsHint" class="results-hint"></div>
+
+      <div class="search">
+        <input id="q-mobile" placeholder="Search">
+        <button id="clearSearchMobile" aria-label="Clear search">×</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= GALLERY ================= -->
+  <div id="gallery" class="grid"></div>
+
+  <div id="emptyState" class="empty-state">
+    No results found. Try another keyword or clear filters.
+  </div>
+
+  <div id="loader" class="loader">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  </div>
+
+  <button id="loadMore" class="secondary load-more">Load More</button>
+</div>
+
+<button id="backToTop" aria-label="Back to top">↑</button>
+
+<script type="module" src="homepage.js"></script>
 </body>
 </html>
