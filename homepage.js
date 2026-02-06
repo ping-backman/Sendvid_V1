@@ -66,7 +66,6 @@ function shuffle(arr) {
 /* ---------- Fetch unique ---------- */
 async function fetchUniqueBatch() {
   const collected = [];
-
   while (collected.length < PAGE_SIZE) {
     const data = await fetchVideos({
       limit: PAGE_SIZE,
@@ -117,8 +116,26 @@ function render(videos) {
       </a>
     `;
 
-    // Mark watched immediately on click
-    el.querySelector("a").addEventListener("click", () => {
+    const aTag = el.querySelector("a");
+    // ----- Swipe detection -----
+    el.addEventListener("touchstart", e => {
+      el._touchStartX = e.touches[0].clientX;
+      el._touchStartY = e.touches[0].clientY;
+      el._isDragging = false;
+    });
+
+    el.addEventListener("touchmove", e => {
+      const dx = Math.abs(e.touches[0].clientX - el._touchStartX);
+      const dy = Math.abs(e.touches[0].clientY - el._touchStartY);
+      if (dx > 10 || dy > 10) el._isDragging = true;
+    });
+
+    el.addEventListener("touchend", e => {
+      setTimeout(() => { el._isDragging = false; }, 50);
+    });
+
+    aTag.addEventListener("click", e => {
+      if (el._isDragging) return; // ignore taps during scroll
       watched.add(v.id);
       localStorage.setItem("watched", JSON.stringify([...watched]));
       el.classList.add("watched");
