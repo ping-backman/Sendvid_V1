@@ -179,7 +179,7 @@ a {
 .search {
   position: relative;
   flex: 0 0 auto; /* desktop search modest width */
-  width: 140px;
+  min-width: 220px;
 }
 
 .search input {
