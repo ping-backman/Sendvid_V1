@@ -8,7 +8,9 @@
   --border: #2a2f3a;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -17,7 +19,10 @@ body {
   color: var(--text);
 }
 
-a { color: inherit; text-decoration: none; }
+a {
+  color: inherit;
+  text-decoration: none;
+}
 
 .container {
   max-width: 1300px;
@@ -34,7 +39,67 @@ a { color: inherit; text-decoration: none; }
 }
 
 @media (max-width: 900px) {
-  .grid { grid-template-columns: repeat(2, 1fr); }
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ================= CARDS ================= */
+
+.card {
+  background: var(--panel);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.card.watched {
+  opacity: 0.45;
+  filter: blur(0.4px);
+}
+
+.thumb {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+}
+
+.card-body {
+  padding: 10px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ================= ANIMATIONS ================= */
+
+.fade-in {
+  animation: fadeUp 0.35s ease forwards;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ================= STICKY CONTROLS ================= */
@@ -49,7 +114,7 @@ a { color: inherit; text-decoration: none; }
   border-bottom: 1px solid var(--border);
 }
 
-/* ================= DESKTOP ================= */
+/* ================= DESKTOP CONTROLS ================= */
 
 .controls-desktop {
   display: flex;
@@ -60,49 +125,25 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 16px;
 }
 
-.search-desktop {
-  position: relative;
-  flex: 0 0 auto;
-  min-width: 220px;
-}
-
-.search-desktop input {
-  background: #121216;
-  border: 1px solid #2a2a33;
-  color: #eee;
-  padding: 8px 32px 8px 12px;
-  border-radius: 8px;
-  width: 100%;
-}
-
-.search-desktop button {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 18px;
-  cursor: pointer;
-  display: none;
-}
-
-/* ================= MOBILE ================= */
+/* ================= MOBILE CONTROLS ================= */
 
 .controls-mobile {
   display: none;
   padding-top: 10px;
 }
 
+/* horizontal filters (mobile) */
 .filters-scroll {
   overflow-x: auto;
   padding: 0 20px;
   scrollbar-width: none;
 }
 
-.filters-scroll::-webkit-scrollbar { display: none; }
+.filters-scroll::-webkit-scrollbar {
+  display: none;
+}
 
+/* second sticky row on mobile */
 .mobile-meta {
   display: flex;
   align-items: center;
@@ -110,34 +151,7 @@ a { color: inherit; text-decoration: none; }
   padding: 10px 0 12px;
 }
 
-.search-mobile {
-  position: relative;
-  width: 100%;
-}
-
-.search-mobile input {
-  background: #121216;
-  border: 1px solid #2a2a33;
-  color: #eee;
-  padding: 10px 36px 10px 12px;
-  border-radius: 8px;
-  width: 100%;
-}
-
-.search-mobile button {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 18px;
-  cursor: pointer;
-  display: none;
-}
-
-/* ================= FILTERS & META ================= */
+/* ================= FILTERS (UNCHANGED) ================= */
 
 .filters {
   display: flex;
@@ -168,15 +182,168 @@ a { color: inherit; text-decoration: none; }
   margin: 0 6px;
 }
 
+/* ================= SEARCH (UNCHANGED) ================= */
+
+.search-desktop {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 220px;
+}
+
+.search-desktop input {
+  background: #121216;
+  border: 1px solid #2a2a33;
+  color: #eee;
+  padding: 8px 32px 8px 12px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.search-desktop button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  display: none;
+}
+
+.search-mobile {
+  position: relative;
+  width: 100%;
+}
+
+.search-mobile input {
+  background: #121216;
+  border: 1px solid #2a2a33;
+  color: #eee;
+  padding: 10px 36px 10px 12px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.search-mobile button {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  display: none;
+}
+
+/* ================= RESULTS HINT (UNCHANGED) ================= */
+
 .results-hint {
   font-size: 13px;
   color: var(--muted);
   white-space: nowrap;
 }
 
+/* ================= LOADER ================= */
+
+.loader {
+  text-align: center;
+  padding: 30px;
+  display: none;
+}
+
+.loader .dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 2px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: bounce 1.4s infinite both;
+}
+
+.loader .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loader .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* ================= EMPTY STATE ================= */
+
+.empty-state {
+  display: none;
+  text-align: center;
+  color: var(--muted);
+  padding: 40px 0;
+}
+
+/* ================= BUTTONS ================= */
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: var(--panel-soft);
+}
+
+.load-more {
+  display: block;
+  margin: 32px auto 0;
+}
+
+/* ================= BACK TO TOP ================= */
+
+#backToTop {
+  position: fixed;
+  right: 16px;
+  bottom: 20px;
+  opacity: 0;
+  pointer-events: none;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  font-size: 18px;
+  border: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateY(10px);
+  z-index: 50;
+}
+
+#backToTop.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
 /* ================= RESPONSIVE SWITCH ================= */
 
 @media (max-width: 900px) {
-  .controls-desktop { display: none; }
-  .controls-mobile  { display: block; }
+  .controls-desktop {
+    display: none;
+  }
+  .controls-mobile {
+    display: block;
+  }
 }
