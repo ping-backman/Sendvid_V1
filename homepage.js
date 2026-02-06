@@ -15,8 +15,10 @@ const gallery = document.getElementById("gallery");
 const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
 const emptyState = document.getElementById("emptyState");
-const resultsHint = document.getElementById("resultsHint");
 const backToTop = document.getElementById("backToTop");
+
+const resultsHintDesktop = document.getElementById("resultsHintDesktop");
+const resultsHintMobile = document.getElementById("resultsHintMobile");
 
 const searchDesktop = document.getElementById("q-desktop");
 const searchMobile = document.getElementById("q-mobile");
@@ -74,7 +76,6 @@ async function fetchUniqueBatch() {
     });
 
     offset = data.nextOffset;
-
     if (!data.videos.length) break;
 
     for (const v of data.videos) {
@@ -89,11 +90,16 @@ async function fetchUniqueBatch() {
   }
 
   if (activeSort === "discover" || activeLength) shuffle(collected);
-
   return collected;
 }
 
 /* ---------- Render ---------- */
+function updateResultsHint() {
+  const text = `Showing ${gallery.children.length} videos`;
+  resultsHintDesktop.textContent = text;
+  resultsHintMobile.textContent = text;
+}
+
 function render(videos) {
   videos.forEach(v => {
     const el = document.createElement("div");
@@ -118,8 +124,7 @@ function render(videos) {
     gallery.appendChild(el);
   });
 
-  // update counter on both desktop & mobile
-  resultsHint.textContent = `Showing ${gallery.children.length} videos`;
+  updateResultsHint();
 }
 
 /* ---------- Load ---------- */
@@ -134,7 +139,7 @@ async function load(reset = false) {
     window.scrollTo({ top: 0 });
   }
 
-  loader.style.display = "block"; // show loader on all devices
+  loader.style.display = "block";
   loadMoreBtn.style.display = "none";
   emptyState.style.display = "none";
 
@@ -176,6 +181,7 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
 
 /* ---------- Search ---------- */
 let searchTimer;
+
 function handleSearch(val) {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
@@ -207,7 +213,7 @@ clearDesktop.addEventListener("click", () => {
   load(true);
 });
 
-clearMobile.addEventListener("click", clearDesktop.click);
+clearMobile.addEventListener("click", () => clearDesktop.click());
 
 /* ---------- Load more ---------- */
 loadMoreBtn.addEventListener("click", () => load());
