@@ -131,6 +131,7 @@ function render(videos) {
 async function load(reset = false) {
   if (loading) return;
   loading = true;
+  document.body.classList.add("loading");
 
   if (reset) {
     gallery.innerHTML = "";
@@ -148,6 +149,7 @@ async function load(reset = false) {
 
   loader.style.display = "none";
   loading = false;
+  document.body.classList.remove("loading");
 
   if (!gallery.children.length) {
     emptyState.style.display = "block";
