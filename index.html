@@ -18,11 +18,11 @@
       <button class="filter-btn" data-sort="popular">Popular</button>
       <button class="filter-btn" data-sort="newest">Newest</button>
       <button class="filter-btn" data-sort="discover">Discover</button>
-      <span class="divider"></span>
+      <span class="divider">|</span>
       <button class="filter-btn" data-length="short">&lt;10m</button>
       <button class="filter-btn" data-length="long">10–40m</button>
       <button class="filter-btn" data-length="longest">40m+</button>
-      <span class="divider"></span>
+      <span class="divider">|</span>
       <div id="resultsHintDesktop" class="results-hint"></div>
     </div>
 
@@ -34,17 +34,23 @@
 
   <!-- ================= MOBILE CONTROLS ================= -->
   <div class="controls-mobile sticky">
-    <div class="filters-scroll">
-      <div class="filters">
-        <button class="filter-btn" data-sort="relevance">Relevant</button>
-        <button class="filter-btn" data-sort="popular">Popular</button>
-        <button class="filter-btn" data-sort="newest">Newest</button>
-        <button class="filter-btn" data-sort="discover">Discover</button>
-        <span class="divider"></span>
-        <button class="filter-btn" data-length="short">&lt;10m</button>
-        <button class="filter-btn" data-length="long">10–40m</button>
-        <button class="filter-btn" data-length="longest">40m+</button>
+    <div class="filters-scroll-wrapper">
+      <span class="scroll-hint left">‹</span>
+
+      <div class="filters-scroll">
+        <div class="filters">
+          <button class="filter-btn" data-sort="relevance">Relevant</button>
+          <button class="filter-btn" data-sort="popular">Popular</button>
+          <button class="filter-btn" data-sort="newest">Newest</button>
+          <button class="filter-btn" data-sort="discover">Discover</button>
+          <span class="divider">|</span>
+          <button class="filter-btn" data-length="short">&lt;10m</button>
+          <button class="filter-btn" data-length="long">10–40m</button>
+          <button class="filter-btn" data-length="longest">40m+</button>
+        </div>
       </div>
+
+      <span class="scroll-hint right">›</span>
     </div>
 
     <div class="mobile-meta">
