@@ -111,27 +111,19 @@ a {
 .controls-desktop {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 12px 0;
   margin-bottom: 16px;
 }
 
-/* ordering for desktop layout */
-.controls-desktop .search {
-  order: 1;
-}
-
-.controls-desktop .filters {
-  order: 2;
-}
-
-.controls-desktop .results-hint {
-  order: 3;
-}
-
-.controls-desktop .divider {
-  order: 4;
-}
+/* exact desktop ordering */
+.controls-desktop .filters.primary { order: 1; }
+.controls-desktop .divider.primary { order: 2; }
+.controls-desktop .filters.duration { order: 3; }
+.controls-desktop .divider.secondary { order: 4; }
+.controls-desktop .results-hint { order: 5; }
+.controls-desktop .divider.tertiary { order: 6; }
+.controls-desktop .search { order: 7; margin-left: auto; }
 
 /* ================= MOBILE CONTROLS ================= */
 
@@ -151,15 +143,25 @@ a {
   display: none;
 }
 
-/* affordance hint (edge fade) */
+/* affordance fade (left + right) */
+.filters-scroll::before,
 .filters-scroll::after {
   content: "";
   position: absolute;
   top: 0;
-  right: 0;
-  width: 36px;
+  width: 28px;
   height: 100%;
   pointer-events: none;
+  z-index: 2;
+}
+
+.filters-scroll::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(15,17,21,0.95), transparent);
+}
+
+.filters-scroll::after {
+  right: 0;
   background: linear-gradient(to left, rgba(15,17,21,0.95), transparent);
 }
 
@@ -207,29 +209,16 @@ a {
 .search {
   position: relative;
   flex: 0 0 auto;
-  max-width: 220px;
+  width: 180px;
 }
 
 .search input {
   background: #121216;
   border: 1px solid #2a2a33;
   color: #eee;
-  padding: 8px 32px 8px 12px;
+  padding: 7px 30px 7px 12px;
   border-radius: 8px;
   width: 100%;
-}
-
-.search button {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 18px;
-  cursor: pointer;
-  display: none;
 }
 
 /* ================= RESULTS HINT ================= */
@@ -266,35 +255,6 @@ a {
   40% { transform: scale(1); }
 }
 
-/* ================= EMPTY STATE ================= */
-
-.empty-state {
-  display: none;
-  text-align: center;
-  color: var(--muted);
-  padding: 40px 0;
-}
-
-/* ================= BUTTONS ================= */
-
-button {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 14px;
-  cursor: pointer;
-}
-
-button.secondary {
-  background: var(--panel-soft);
-}
-
-.load-more {
-  display: block;
-  margin: 32px auto 0;
-}
-
 /* ================= BACK TO TOP ================= */
 
 #backToTop {
@@ -327,3 +287,4 @@ button.secondary {
   .controls-desktop { display: none; }
   .controls-mobile  { display: block; }
 }
+v
