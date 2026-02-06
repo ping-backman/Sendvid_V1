@@ -148,4 +148,79 @@ async function load(reset = false) {
     emptyState.style.display = "block";
   }
 
-  if (batch.len
+  if (batch.length === PAGE_SIZE) {
+    loadMoreBtn.style.display = "block";
+  }
+}
+
+/* ---------- Filters ---------- */
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    if (btn.dataset.sort) {
+      activeSort = btn.dataset.sort;
+      activeLength = null;
+    }
+
+    if (btn.dataset.length) {
+      activeLength = btn.dataset.length;
+      activeSort = "discover";
+    }
+
+    syncToURL();
+    load(true);
+  });
+});
+
+/* ---------- Search ---------- */
+let searchTimer;
+function handleSearch(val) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentQuery = val.trim();
+    syncToURL();
+    load(true);
+  }, 400);
+}
+
+searchDesktop.addEventListener("input", e => {
+  clearDesktop.style.display = e.target.value ? "block" : "none";
+  searchMobile.value = e.target.value;
+  handleSearch(e.target.value);
+});
+
+searchMobile.addEventListener("input", e => {
+  clearMobile.style.display = e.target.value ? "block" : "none";
+  searchDesktop.value = e.target.value;
+  handleSearch(e.target.value);
+});
+
+clearDesktop.addEventListener("click", () => {
+  searchDesktop.value = "";
+  searchMobile.value = "";
+  clearDesktop.style.display = "none";
+  clearMobile.style.display = "none";
+  currentQuery = "";
+  syncToURL();
+  load(true);
+});
+
+clearMobile.addEventListener("click", clearDesktop.click);
+
+/* ---------- Load more ---------- */
+loadMoreBtn.addEventListener("click", () => load());
+
+/* ---------- Back to top ---------- */
+window.addEventListener("scroll", () => {
+  backToTop.classList.toggle("visible", window.scrollY > 500);
+});
+
+backToTop.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+/* ---------- Init ---------- */
+syncFromURL();
+load(true);
