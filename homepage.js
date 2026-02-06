@@ -9,15 +9,19 @@ let currentQuery = "";
 let loading = false;
 
 const seenIds = new Set();
+const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
 
 const gallery = document.getElementById("gallery");
 const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
 const emptyState = document.getElementById("emptyState");
 const resultsHint = document.getElementById("resultsHint");
-const searchInput = document.getElementById("q");
-const clearBtn = document.getElementById("clearSearch");
 const backToTop = document.getElementById("backToTop");
+
+const searchDesktop = document.getElementById("q-desktop");
+const searchMobile = document.getElementById("q-mobile");
+const clearDesktop = document.getElementById("clearSearchDesktop");
+const clearMobile = document.getElementById("clearSearchMobile");
 
 /* ---------- URL sync ---------- */
 function syncFromURL() {
@@ -26,8 +30,11 @@ function syncFromURL() {
   activeLength = p.get("length");
   currentQuery = p.get("q") || "";
 
-  searchInput.value = currentQuery;
-  clearBtn.style.display = currentQuery ? "block" : "none";
+  searchDesktop.value = currentQuery;
+  searchMobile.value = currentQuery;
+
+  clearDesktop.style.display = currentQuery ? "block" : "none";
+  clearMobile.style.display = currentQuery ? "block" : "none";
 
   document.querySelectorAll(".filter-btn").forEach(btn => {
     btn.classList.toggle(
@@ -45,7 +52,7 @@ function syncToURL() {
   history.replaceState({}, "", `?${p}`);
 }
 
-/* ---------- Helpers ---------- */
+/* ---------- Shuffle ---------- */
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -53,9 +60,9 @@ function shuffle(arr) {
   }
 }
 
-/* ---------- Fetch unique videos ---------- */
-async function fetchUniqueBatch(reset = false) {
-  let collected = [];
+/* ---------- Fetch unique ---------- */
+async function fetchUniqueBatch() {
+  const collected = [];
 
   while (collected.length < PAGE_SIZE) {
     const data = await fetchVideos({
@@ -74,15 +81,14 @@ async function fetchUniqueBatch(reset = false) {
       if (!seenIds.has(v.id)) {
         seenIds.add(v.id);
         collected.push(v);
+        if (collected.length === PAGE_SIZE) break;
       }
     }
 
     if (!data.nextOffset) break;
   }
 
-  if (activeSort === "discover" || activeLength) {
-    shuffle(collected);
-  }
+  if (activeSort === "discover" || activeLength) shuffle(collected);
 
   return collected;
 }
@@ -92,6 +98,8 @@ function render(videos) {
   videos.forEach(v => {
     const el = document.createElement("div");
     el.className = "card fade-in";
+    if (watched.has(v.id)) el.classList.add("watched");
+
     el.innerHTML = `
       <a href="bridge.html?id=${v.id}">
         <img class="thumb" src="${v.thumbnail}" alt="${v.title}">
@@ -101,6 +109,12 @@ function render(videos) {
         </div>
       </a>
     `;
+
+    el.querySelector("a").addEventListener("click", () => {
+      watched.add(v.id);
+      localStorage.setItem("watched", JSON.stringify([...watched]));
+    });
+
     gallery.appendChild(el);
   });
 }
@@ -114,7 +128,6 @@ async function load(reset = false) {
     gallery.innerHTML = "";
     offset = 0;
     seenIds.clear();
-    resultsHint.textContent = "";
     window.scrollTo({ top: 0 });
   }
 
@@ -122,8 +135,7 @@ async function load(reset = false) {
   loadMoreBtn.style.display = "none";
   emptyState.style.display = "none";
 
-  const batch = await fetchUniqueBatch(reset);
-
+  const batch = await fetchUniqueBatch();
   render(batch);
 
   loader.style.display = "none";
@@ -163,24 +175,38 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
 
 /* ---------- Search ---------- */
 let searchTimer;
-searchInput.addEventListener("input", () => {
+function handleSearch(val) {
   clearTimeout(searchTimer);
-  clearBtn.style.display = searchInput.value ? "block" : "none";
-
   searchTimer = setTimeout(() => {
-    currentQuery = searchInput.value.trim();
+    currentQuery = val.trim();
     syncToURL();
     load(true);
   }, 400);
+}
+
+searchDesktop.addEventListener("input", e => {
+  clearDesktop.style.display = e.target.value ? "block" : "none";
+  searchMobile.value = e.target.value;
+  handleSearch(e.target.value);
 });
 
-clearBtn.addEventListener("click", () => {
-  searchInput.value = "";
+searchMobile.addEventListener("input", e => {
+  clearMobile.style.display = e.target.value ? "block" : "none";
+  searchDesktop.value = e.target.value;
+  handleSearch(e.target.value);
+});
+
+clearDesktop.addEventListener("click", () => {
+  searchDesktop.value = "";
+  searchMobile.value = "";
+  clearDesktop.style.display = "none";
+  clearMobile.style.display = "none";
   currentQuery = "";
-  clearBtn.style.display = "none";
   syncToURL();
   load(true);
 });
+
+clearMobile.addEventListener("click", clearDesktop.click);
 
 /* ---------- Load more ---------- */
 loadMoreBtn.addEventListener("click", () => load());
