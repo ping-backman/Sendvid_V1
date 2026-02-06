@@ -33,9 +33,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 @media (max-width: 900px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ================= CARDS ================= */
@@ -47,7 +45,8 @@ a { color: inherit; text-decoration: none; }
   transition: transform .2s ease, box-shadow .2s ease, opacity .3s ease;
   display: flex;
   flex-direction: column;
-  position: relative; /* required for watched icon overlay */
+  position: relative; /* for watched icon overlay */
+  touch-action: manipulation; /* mobile: prevent unwanted gestures */
 }
 
 .card:hover,
@@ -56,13 +55,19 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 8px 20px rgba(0,0,0,.4);
 }
 
-/* ================= WATCHED ICON ================= */
-.card.watched img.thumb {
-  filter: brightness(0.7);
+@media (hover: none) and (pointer: coarse) {
+  .card:hover,
+  .card:hover a {
+    transform: none;
+    box-shadow: none;
+  }
 }
 
+/* ================= WATCHED ICON ================= */
+.card.watched img.thumb { filter: brightness(0.7); }
+
 .card.watched::after {
-  content: "✔"; /* checkmark icon */
+  content: "✔";
   position: absolute;
   top: 8px;
   right: 8px;
@@ -77,52 +82,50 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   border-radius: 50%;
   box-shadow: 0 2px 6px rgba(0,0,0,.6);
-  pointer-events: none; /* does not block clicks */
+  pointer-events: none;
   z-index: 5;
 }
 
 /* ================= THUMBNAILS ================= */
 .thumb {
   width: 100%;
-  height: 280px; /* desktop */
+  height: 280px;
   object-fit: cover;
   display: block;
 }
 
 @media (max-width: 900px) {
-  .thumb {
-    height: 180px; /* mobile */
-    object-fit: cover;
-  }
+  .thumb { height: 180px; object-fit: cover; }
 }
 
-/* Card content */
-.card-body {
-  padding: 10px;
+.card a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 4px; /* small buffer for mobile taps */
+  border-radius: 10px;
 }
 
-.title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
+.card,
+.card a {
+  -webkit-tap-highlight-color: transparent;
 }
 
-.meta {
-  font-size: 12px;
-  color: var(--muted);
-}
+/* ================= CARD CONTENT ================= */
+.card-body { padding: 10px; }
+
+.title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.meta { font-size: 12px; color: var(--muted); }
 
 /* ================= ANIMATIONS ================= */
-.fade-in {
-  animation: fadeUp 0.35s ease forwards;
-}
+.fade-in { animation: fadeUp 0.35s ease forwards; }
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ================= SKELETON LOADER ================= */
+/* ================= SKELETON ================= */
 .skeleton {
   background: linear-gradient(
     90deg,
@@ -137,16 +140,14 @@ a { color: inherit; text-decoration: none; }
   height: 280px;
 }
 
-@media (max-width: 900px) {
-  .skeleton { height: 180px; }
-}
+@media (max-width: 900px) { .skeleton { height: 180px; } }
 
 @keyframes shimmer {
   0% { background-position: 100% 0; }
   100% { background-position: -100% 0; }
 }
 
-/* ================= STICKY CONTROLS ================= */
+/* ================= CONTROLS ================= */
 .controls-desktop,
 .controls-mobile {
   position: sticky;
@@ -168,8 +169,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 .controls-desktop.compact { padding: 8px 0; }
-
-/* ================= MOBILE ================= */
 .controls-mobile { display: none; padding-top: 10px; }
 
 .filters-scroll-wrapper {
@@ -192,12 +191,9 @@ a { color: inherit; text-decoration: none; }
   gap: 4px;
   scrollbar-width: none;
 }
-
 .filters-scroll::-webkit-scrollbar { display: none; }
 
 .mobile-meta { display: flex; align-items: center; gap: 10px; padding: 10px 0 12px; }
-
-/* ================= FILTERS ================= */
 .filters { display: flex; gap: 8px; white-space: nowrap; }
 
 .filter-btn {
@@ -209,13 +205,11 @@ a { color: inherit; text-decoration: none; }
   font-size: 13px;
   cursor: pointer;
 }
-
 .filter-btn.active {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
 }
-
 .divider { color: #555; padding: 0 4px; }
 
 /* ================= SEARCH ================= */
@@ -230,7 +224,6 @@ a { color: inherit; text-decoration: none; }
 }
 .search-desktop input { padding: 8px 32px 8px 12px; }
 .search-mobile input { padding: 10px 36px 10px 12px; }
-
 .search-desktop button,
 .search-mobile button {
   position: absolute;
