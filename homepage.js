@@ -3,8 +3,8 @@ import { fetchVideos } from "/api.js";
 const PAGE_SIZE = 20;
 
 let offset = 0;
-let activeSort = "relevance";
-let activeLength = null;
+let activeSort = "relevance";   // always one active
+let activeLength = null;       // optional toggle
 let currentQuery = "";
 let loading = false;
 
@@ -41,13 +41,7 @@ function syncFromURL() {
   clearDesktop.style.display = currentQuery ? "block" : "none";
   clearMobile.style.display = currentQuery ? "block" : "none";
 
-  document.querySelectorAll(".filter-btn").forEach(btn => {
-    btn.classList.toggle(
-      "active",
-      btn.dataset.sort === activeSort ||
-      btn.dataset.length === activeLength
-    );
-  });
+  updateActiveButtons();
 }
 
 function syncToURL() {
@@ -56,6 +50,18 @@ function syncToURL() {
   if (activeLength) p.set("length", activeLength);
   if (currentQuery) p.set("q", currentQuery);
   history.replaceState({}, "", `?${p.toString()}`);
+}
+
+/* ---------- Active state UI ---------- */
+function updateActiveButtons() {
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    if (btn.dataset.sort) {
+      btn.classList.toggle("active", btn.dataset.sort === activeSort);
+    }
+    if (btn.dataset.length) {
+      btn.classList.toggle("active", btn.dataset.length === activeLength);
+    }
+  });
 }
 
 /* ---------- Shuffle ---------- */
@@ -93,7 +99,9 @@ async function fetchUniqueBatch() {
     if (!data.nextOffset) break;
   }
 
+  // Randomize only for discover
   if (activeSort === "discover") shuffle(collected);
+
   return collected;
 }
 
@@ -182,19 +190,27 @@ async function load(reset = false) {
 /* ---------- Filters ---------- */
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
 
+    // Primary sort (radio behavior)
     if (btn.dataset.sort) {
-      activeSort = btn.dataset.sort;
+      if (btn.dataset.sort !== activeSort) {
+        activeSort = btn.dataset.sort;
+        syncToURL();
+        updateActiveButtons();
+        load(true);
+      }
+      return;
     }
 
+    // Length filter (toggle behavior)
     if (btn.dataset.length) {
-      activeLength = btn.dataset.length;
-    }
+      activeLength =
+        activeLength === btn.dataset.length ? null : btn.dataset.length;
 
-    syncToURL();
-    load(true);
+      syncToURL();
+      updateActiveButtons();
+      load(true);
+    }
   });
 });
 
