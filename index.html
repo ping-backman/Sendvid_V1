@@ -13,11 +13,6 @@
 
   <!-- ================= DESKTOP CONTROLS ================= -->
   <div class="controls-desktop sticky">
-    <div class="search">
-      <input id="q-desktop" placeholder="Search keyword or tag">
-      <button id="clearSearchDesktop" aria-label="Clear search">×</button>
-    </div>
-
     <div class="filters">
       <button class="filter-btn" data-sort="relevance">Relevant</button>
       <button class="filter-btn" data-sort="popular">Popular</button>
@@ -27,6 +22,13 @@
       <button class="filter-btn" data-length="short">&lt;10m</button>
       <button class="filter-btn" data-length="long">10–40m</button>
       <button class="filter-btn" data-length="longest">40m+</button>
+      <span class="divider"></span>
+      <div id="resultsHint" class="results-hint"></div>
+    </div>
+
+    <div class="search">
+      <input id="q-desktop" placeholder="Search keyword or tag">
+      <button id="clearSearchDesktop" aria-label="Clear search">×</button>
     </div>
   </div>
 
