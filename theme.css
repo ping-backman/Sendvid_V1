@@ -67,7 +67,7 @@ a { color: inherit; text-decoration: none; }
 
 @media (max-width: 900px) {
   .thumb {
-    height: 200px; /* mobile height */
+    height: 180px; /* mobile height */
     object-fit: cover;
   }
 }
