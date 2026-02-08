@@ -3,14 +3,22 @@ import { fetchVideos } from "/api.js";
 const PAGE_SIZE = 20;
 
 let offset = 0;
-let activeSort = "relevance";   // always one active
-let activeLength = null;       // optional toggle
+let activeSort = "relevance";
+let activeLength = null;
 let currentQuery = "";
 let loading = false;
 
 const seenIds = new Set();
 const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
 
+/* ---------- Discover seed (session stable) ---------- */
+let discoverSeed =
+  sessionStorage.getItem("discoverSeed") ||
+  Math.random().toString(36).slice(2);
+
+sessionStorage.setItem("discoverSeed", discoverSeed);
+
+/* ---------- DOM ---------- */
 const gallery = document.getElementById("gallery");
 const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
@@ -30,16 +38,12 @@ const desktopControls = document.querySelector(".controls-desktop");
 /* ---------- URL sync ---------- */
 function syncFromURL() {
   const p = new URLSearchParams(location.search);
-
   activeSort = p.get("sort") || "relevance";
   activeLength = p.get("length");
   currentQuery = p.get("q") || "";
 
   searchDesktop.value = currentQuery;
   searchMobile.value = currentQuery;
-
-  clearDesktop.style.display = currentQuery ? "block" : "none";
-  clearMobile.style.display = currentQuery ? "block" : "none";
 
   updateActiveButtons();
 }
@@ -52,27 +56,17 @@ function syncToURL() {
   history.replaceState({}, "", `?${p.toString()}`);
 }
 
-/* ---------- Active state UI ---------- */
+/* ---------- Active buttons ---------- */
 function updateActiveButtons() {
   document.querySelectorAll(".filter-btn").forEach(btn => {
-    if (btn.dataset.sort) {
+    if (btn.dataset.sort)
       btn.classList.toggle("active", btn.dataset.sort === activeSort);
-    }
-    if (btn.dataset.length) {
+    if (btn.dataset.length)
       btn.classList.toggle("active", btn.dataset.length === activeLength);
-    }
   });
 }
 
-/* ---------- Shuffle ---------- */
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-}
-
-/* ---------- Fetch unique ---------- */
+/* ---------- Fetch ---------- */
 async function fetchUniqueBatch() {
   const collected = [];
 
@@ -82,7 +76,9 @@ async function fetchUniqueBatch() {
       offset,
       sort: activeSort,
       length: activeLength,
-      q: currentQuery
+      q: currentQuery,
+      discoverSeed,
+      watched: [...watched].slice(-50).join(",")
     });
 
     offset = data.nextOffset;
@@ -99,17 +95,14 @@ async function fetchUniqueBatch() {
     if (!data.nextOffset) break;
   }
 
-  // Randomize only for discover
-  if (activeSort === "discover") shuffle(collected);
-
   return collected;
 }
 
 /* ---------- Render ---------- */
 function updateResultsHint() {
-  const text = `Showing ${gallery.children.length} videos`;
-  resultsHintDesktop.textContent = text;
-  resultsHintMobile.textContent = text;
+  const t = `Showing ${gallery.children.length} videos`;
+  resultsHintDesktop.textContent = t;
+  resultsHintMobile.textContent = t;
 }
 
 function render(videos) {
@@ -120,7 +113,7 @@ function render(videos) {
 
     el.innerHTML = `
       <a href="bridge.html?id=${v.id}">
-        <img class="thumb" src="${v.thumbnail}" alt="${v.title}">
+        <img class="thumb" src="${v.thumbnail}">
         <div class="card-body">
           <div class="title">${v.title}</div>
           <div class="meta">${v.duration} • ${v.views} views</div>
@@ -130,26 +123,7 @@ function render(videos) {
 
     const link = el.querySelector("a");
 
-    // ----- Touch / scroll protection -----
-    el._isDragging = false;
-
-    el.addEventListener("touchstart", e => {
-      el._startX = e.touches[0].clientX;
-      el._startY = e.touches[0].clientY;
-      el._isDragging = false;
-    }, { passive: true });
-
-    el.addEventListener("touchmove", e => {
-      const dx = Math.abs(e.touches[0].clientX - el._startX);
-      const dy = Math.abs(e.touches[0].clientY - el._startY);
-      if (dx > 10 || dy > 10) el._isDragging = true;
-    }, { passive: true });
-
-    link.addEventListener("click", e => {
-      if (el._isDragging) {
-        e.preventDefault();
-        return;
-      }
+    link.addEventListener("click", () => {
       watched.add(v.id);
       localStorage.setItem("watched", JSON.stringify([...watched]));
       el.classList.add("watched");
@@ -175,7 +149,6 @@ async function load(reset = false) {
 
   loader.style.display = "block";
   loadMoreBtn.style.display = "none";
-  emptyState.style.display = "none";
 
   const batch = await fetchUniqueBatch();
   render(batch);
@@ -190,76 +163,22 @@ async function load(reset = false) {
 /* ---------- Filters ---------- */
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-
-    // Primary sort (radio behavior)
-    if (btn.dataset.sort) {
-      if (btn.dataset.sort !== activeSort) {
-        activeSort = btn.dataset.sort;
-        syncToURL();
-        updateActiveButtons();
-        load(true);
-      }
+    if (btn.dataset.sort && btn.dataset.sort !== activeSort) {
+      activeSort = btn.dataset.sort;
+      syncToURL();
+      updateActiveButtons();
+      load(true);
       return;
     }
 
-    // Length filter (toggle behavior)
     if (btn.dataset.length) {
       activeLength =
         activeLength === btn.dataset.length ? null : btn.dataset.length;
-
       syncToURL();
       updateActiveButtons();
       load(true);
     }
   });
-});
-
-/* ---------- Search ---------- */
-let searchTimer;
-function handleSearch(val) {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => {
-    currentQuery = val.trim();
-    syncToURL();
-    load(true);
-  }, 400);
-}
-
-searchDesktop.addEventListener("input", e => {
-  clearDesktop.style.display = e.target.value ? "block" : "none";
-  searchMobile.value = e.target.value;
-  handleSearch(e.target.value);
-});
-
-searchMobile.addEventListener("input", e => {
-  clearMobile.style.display = e.target.value ? "block" : "none";
-  searchDesktop.value = e.target.value;
-  handleSearch(e.target.value);
-});
-
-clearDesktop.addEventListener("click", () => {
-  searchDesktop.value = "";
-  searchMobile.value = "";
-  clearDesktop.style.display = "none";
-  clearMobile.style.display = "none";
-  currentQuery = "";
-  syncToURL();
-  load(true);
-});
-
-clearMobile.addEventListener("click", () => clearDesktop.click());
-
-/* ---------- Load more ---------- */
-loadMoreBtn.addEventListener("click", () => load());
-
-/* ---------- Back to top ---------- */
-window.addEventListener("scroll", () => {
-  backToTop.classList.toggle("visible", window.scrollY > 500);
-  if (desktopControls) desktopControls.classList.toggle("compact", window.scrollY > 40);
-});
-
-backToTop.addEventListener("click", () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 /* ---------- Init ---------- */
