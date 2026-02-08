@@ -7,6 +7,7 @@ let activeSort = "relevance";
 let activeLength = null;
 let currentQuery = "";
 let loading = false;
+let reachedEnd = false;
 
 const seenIds = new Set();
 const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
@@ -23,17 +24,12 @@ const gallery = document.getElementById("gallery");
 const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
 const emptyState = document.getElementById("emptyState");
-const backToTop = document.getElementById("backToTop");
 
 const resultsHintDesktop = document.getElementById("resultsHintDesktop");
 const resultsHintMobile = document.getElementById("resultsHintMobile");
 
 const searchDesktop = document.getElementById("q-desktop");
 const searchMobile = document.getElementById("q-mobile");
-const clearDesktop = document.getElementById("clearSearchDesktop");
-const clearMobile = document.getElementById("clearSearchMobile");
-
-const desktopControls = document.querySelector(".controls-desktop");
 
 /* ---------- URL sync ---------- */
 function syncFromURL() {
@@ -70,7 +66,7 @@ function updateActiveButtons() {
 async function fetchUniqueBatch() {
   const collected = [];
 
-  while (collected.length < PAGE_SIZE) {
+  while (collected.length < PAGE_SIZE && !reachedEnd) {
     const data = await fetchVideos({
       limit: PAGE_SIZE,
       offset,
@@ -81,8 +77,12 @@ async function fetchUniqueBatch() {
       watched: [...watched].slice(-50).join(",")
     });
 
+    if (!data.videos.length) {
+      reachedEnd = true;
+      break;
+    }
+
     offset = data.nextOffset;
-    if (!data.videos.length) break;
 
     for (const v of data.videos) {
       if (!seenIds.has(v.id)) {
@@ -92,7 +92,10 @@ async function fetchUniqueBatch() {
       }
     }
 
-    if (!data.nextOffset) break;
+    if (offset >= data.total) {
+      reachedEnd = true;
+      break;
+    }
   }
 
   return collected;
@@ -121,9 +124,7 @@ function render(videos) {
       </a>
     `;
 
-    const link = el.querySelector("a");
-
-    link.addEventListener("click", () => {
+    el.querySelector("a").addEventListener("click", () => {
       watched.add(v.id);
       localStorage.setItem("watched", JSON.stringify([...watched]));
       el.classList.add("watched");
@@ -143,6 +144,7 @@ async function load(reset = false) {
   if (reset) {
     gallery.innerHTML = "";
     offset = 0;
+    reachedEnd = false;
     seenIds.clear();
     window.scrollTo({ top: 0 });
   }
@@ -156,9 +158,19 @@ async function load(reset = false) {
   loader.style.display = "none";
   loading = false;
 
-  if (!gallery.children.length) emptyState.style.display = "block";
-  if (batch.length === PAGE_SIZE) loadMoreBtn.style.display = "block";
+  if (!gallery.children.length) {
+    emptyState.style.display = "block";
+  }
+
+  if (!reachedEnd && batch.length === PAGE_SIZE) {
+    loadMoreBtn.style.display = "block";
+  }
 }
+
+/* ---------- Load More CLICK (FIX) ---------- */
+loadMoreBtn.addEventListener("click", () => {
+  load(false);
+});
 
 /* ---------- Filters ---------- */
 document.querySelectorAll(".filter-btn").forEach(btn => {
