@@ -8,6 +8,7 @@ let activeLength = null;
 let currentQuery = "";
 let loading = false;
 let reachedEnd = false;
+let abortLoad = false;
 
 const seenIds = new Set();
 const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
@@ -24,12 +25,22 @@ const gallery = document.getElementById("gallery");
 const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
 const emptyState = document.getElementById("emptyState");
+const backToTop = document.getElementById("backToTop");
 
 const resultsHintDesktop = document.getElementById("resultsHintDesktop");
 const resultsHintMobile = document.getElementById("resultsHintMobile");
 
 const searchDesktop = document.getElementById("q-desktop");
 const searchMobile = document.getElementById("q-mobile");
+
+/* ---------- Back to top ---------- */
+window.addEventListener("scroll", () => {
+  backToTop.style.display = window.scrollY > 600 ? "block" : "none";
+});
+
+backToTop.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
 
 /* ---------- URL sync ---------- */
 function syncFromURL() {
@@ -66,7 +77,11 @@ function updateActiveButtons() {
 async function fetchUniqueBatch() {
   const collected = [];
 
-  while (collected.length < PAGE_SIZE && !reachedEnd) {
+  while (
+    collected.length < PAGE_SIZE &&
+    !reachedEnd &&
+    !abortLoad
+  ) {
     const data = await fetchVideos({
       limit: PAGE_SIZE,
       offset,
@@ -138,14 +153,17 @@ function render(videos) {
 
 /* ---------- Load ---------- */
 async function load(reset = false) {
-  if (loading) return;
+  if (loading && !reset) return;
+
   loading = true;
+  abortLoad = false;
 
   if (reset) {
     gallery.innerHTML = "";
     offset = 0;
     reachedEnd = false;
     seenIds.clear();
+    emptyState.style.display = "none";
     window.scrollTo({ top: 0 });
   }
 
@@ -153,6 +171,13 @@ async function load(reset = false) {
   loadMoreBtn.style.display = "none";
 
   const batch = await fetchUniqueBatch();
+
+  if (abortLoad) {
+    loader.style.display = "none";
+    loading = false;
+    return;
+  }
+
   render(batch);
 
   loader.style.display = "none";
@@ -167,7 +192,7 @@ async function load(reset = false) {
   }
 }
 
-/* ---------- Load More CLICK (FIX) ---------- */
+/* ---------- Load more ---------- */
 loadMoreBtn.addEventListener("click", () => {
   load(false);
 });
@@ -175,6 +200,9 @@ loadMoreBtn.addEventListener("click", () => {
 /* ---------- Filters ---------- */
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
+    abortLoad = true;
+    loading = false;
+
     if (btn.dataset.sort && btn.dataset.sort !== activeSort) {
       activeSort = btn.dataset.sort;
       syncToURL();
