@@ -7,8 +7,6 @@ let activeSort = "relevance";
 let activeLength = null;
 let currentQuery = "";
 let loading = false;
-let reachedEnd = false;
-let abortLoad = false;
 
 const seenIds = new Set();
 const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
@@ -33,14 +31,7 @@ const resultsHintMobile = document.getElementById("resultsHintMobile");
 const searchDesktop = document.getElementById("q-desktop");
 const searchMobile = document.getElementById("q-mobile");
 
-/* ---------- Back to top ---------- */
-window.addEventListener("scroll", () => {
-  backToTop.style.display = window.scrollY > 600 ? "block" : "none";
-});
-
-backToTop.addEventListener("click", () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
-});
+const desktopControls = document.querySelector(".controls-desktop");
 
 /* ---------- URL sync ---------- */
 function syncFromURL() {
@@ -77,27 +68,18 @@ function updateActiveButtons() {
 async function fetchUniqueBatch() {
   const collected = [];
 
-  while (
-    collected.length < PAGE_SIZE &&
-    !reachedEnd &&
-    !abortLoad
-  ) {
+  while (collected.length < PAGE_SIZE) {
     const data = await fetchVideos({
       limit: PAGE_SIZE,
       offset,
       sort: activeSort,
       length: activeLength,
       q: currentQuery,
-      discoverSeed,
-      watched: [...watched].slice(-50).join(",")
+      discoverSeed
     });
 
-    if (!data.videos.length) {
-      reachedEnd = true;
-      break;
-    }
-
     offset = data.nextOffset;
+    if (!data.videos.length) break;
 
     for (const v of data.videos) {
       if (!seenIds.has(v.id)) {
@@ -107,10 +89,7 @@ async function fetchUniqueBatch() {
       }
     }
 
-    if (offset >= data.total) {
-      reachedEnd = true;
-      break;
-    }
+    if (offset >= data.total) break;
   }
 
   return collected;
@@ -153,17 +132,13 @@ function render(videos) {
 
 /* ---------- Load ---------- */
 async function load(reset = false) {
-  if (loading && !reset) return;
-
+  if (loading) return;
   loading = true;
-  abortLoad = false;
 
   if (reset) {
     gallery.innerHTML = "";
     offset = 0;
-    reachedEnd = false;
     seenIds.clear();
-    emptyState.style.display = "none";
     window.scrollTo({ top: 0 });
   }
 
@@ -171,38 +146,21 @@ async function load(reset = false) {
   loadMoreBtn.style.display = "none";
 
   const batch = await fetchUniqueBatch();
-
-  if (abortLoad) {
-    loader.style.display = "none";
-    loading = false;
-    return;
-  }
-
   render(batch);
 
   loader.style.display = "none";
   loading = false;
 
-  if (!gallery.children.length) {
-    emptyState.style.display = "block";
-  }
+  emptyState.style.display =
+    gallery.children.length === 0 ? "block" : "none";
 
-  if (!reachedEnd && batch.length === PAGE_SIZE) {
+  if (batch.length === PAGE_SIZE)
     loadMoreBtn.style.display = "block";
-  }
 }
-
-/* ---------- Load more ---------- */
-loadMoreBtn.addEventListener("click", () => {
-  load(false);
-});
 
 /* ---------- Filters ---------- */
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    abortLoad = true;
-    loading = false;
-
     if (btn.dataset.sort && btn.dataset.sort !== activeSort) {
       activeSort = btn.dataset.sort;
       syncToURL();
@@ -219,6 +177,16 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
       load(true);
     }
   });
+});
+
+/* ---------- Back to top (RESTORED) ---------- */
+window.addEventListener("scroll", () => {
+  backToTop.classList.toggle("visible", window.scrollY > 600);
+  desktopControls.classList.toggle("compact", window.scrollY > 80);
+});
+
+backToTop.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 /* ---------- Init ---------- */
