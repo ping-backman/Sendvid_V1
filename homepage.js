@@ -8,7 +8,7 @@ let activeLength = null;
 let currentQuery = "";
 let loading = false;
 
-const seenIds = new Set();
+/* const seenIds = new Set(); ------ removed*/ 
 const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
 
 /* ---------- SESSION SEED FOR DISCOVER ---------- */
@@ -69,33 +69,22 @@ function updateActiveButtons() {
 
 /* ---------- Fetch unique ---------- */
 async function fetchUniqueBatch() {
-  const collected = [];
+  const data = await fetchVideos({
+    limit: PAGE_SIZE,
+    offset,
+    sort: activeSort,
+    length: activeLength,
+    q: currentQuery,
+    discoverSeed: activeSort === "discover" ? discoverSeed : undefined
+  });
 
-  while (collected.length < PAGE_SIZE) {
-    const data = await fetchVideos({
-      limit: PAGE_SIZE,
-      offset,
-      sort: activeSort,
-      length: activeLength,
-      q: currentQuery,
-      discoverSeed: activeSort === "discover" ? discoverSeed : undefined
-    });
-
-    if (!data.videos.length) break;
-
-    for (const v of data.videos) {
-      if (!seenIds.has(v.id)) {
-        seenIds.add(v.id);
-        collected.push(v);
-        if (collected.length === PAGE_SIZE) break;
-      }
-    }
-
-    if (data.nextOffset == null) break;
+  if (data.nextOffset != null) {
     offset = data.nextOffset;
+  } else {
+    offset = null;
   }
 
-  return collected;
+  return data.videos;
 }
 
 /* ---------- Render ---------- */
@@ -161,7 +150,7 @@ async function load(reset = false) {
   if (reset) {
     gallery.innerHTML = "";
     offset = 0;
-    seenIds.clear();
+    /* seenIds.clear();              ------removed-- */
     window.scrollTo({ top: 0 });
   }
 
