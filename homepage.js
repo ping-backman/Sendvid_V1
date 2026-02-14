@@ -11,14 +11,14 @@ let loading = false;
 const seenIds = new Set();
 const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
 
-/* ---------- Discover seed (session stable) ---------- */
-let discoverSeed =
-  sessionStorage.getItem("discoverSeed") ||
-  Math.random().toString(36).slice(2);
+/* ---------- SESSION SEED FOR DISCOVER ---------- */
+const discoverSeed = sessionStorage.getItem("discoverSeed") ||
+  (() => {
+    const s = Math.random().toString(36).slice(2);
+    sessionStorage.setItem("discoverSeed", s);
+    return s;
+  })();
 
-sessionStorage.setItem("discoverSeed", discoverSeed);
-
-/* ---------- DOM ---------- */
 const gallery = document.getElementById("gallery");
 const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
@@ -30,6 +30,8 @@ const resultsHintMobile = document.getElementById("resultsHintMobile");
 
 const searchDesktop = document.getElementById("q-desktop");
 const searchMobile = document.getElementById("q-mobile");
+const clearDesktop = document.getElementById("clearSearchDesktop");
+const clearMobile = document.getElementById("clearSearchMobile");
 
 const desktopControls = document.querySelector(".controls-desktop");
 
@@ -39,10 +41,10 @@ function syncFromURL() {
   activeSort = p.get("sort") || "relevance";
   activeLength = p.get("length");
   currentQuery = p.get("q") || "";
-
   searchDesktop.value = currentQuery;
   searchMobile.value = currentQuery;
-
+  clearDesktop.style.display = currentQuery ? "block" : "none";
+  clearMobile.style.display = currentQuery ? "block" : "none";
   updateActiveButtons();
 }
 
@@ -54,17 +56,18 @@ function syncToURL() {
   history.replaceState({}, "", `?${p.toString()}`);
 }
 
-/* ---------- Active buttons ---------- */
 function updateActiveButtons() {
   document.querySelectorAll(".filter-btn").forEach(btn => {
-    if (btn.dataset.sort)
+    if (btn.dataset.sort) {
       btn.classList.toggle("active", btn.dataset.sort === activeSort);
-    if (btn.dataset.length)
+    }
+    if (btn.dataset.length) {
       btn.classList.toggle("active", btn.dataset.length === activeLength);
+    }
   });
 }
 
-/* ---------- Fetch ---------- */
+/* ---------- Fetch unique ---------- */
 async function fetchUniqueBatch() {
   const collected = [];
 
@@ -75,7 +78,7 @@ async function fetchUniqueBatch() {
       sort: activeSort,
       length: activeLength,
       q: currentQuery,
-      discoverSeed
+      discoverSeed: activeSort === "discover" ? discoverSeed : undefined
     });
 
     offset = data.nextOffset;
@@ -89,7 +92,7 @@ async function fetchUniqueBatch() {
       }
     }
 
-    if (offset >= data.total) break;
+    if (!data.nextOffset) break;
   }
 
   return collected;
@@ -97,9 +100,9 @@ async function fetchUniqueBatch() {
 
 /* ---------- Render ---------- */
 function updateResultsHint() {
-  const t = `Showing ${gallery.children.length} videos`;
-  resultsHintDesktop.textContent = t;
-  resultsHintMobile.textContent = t;
+  const text = `Showing ${gallery.children.length} videos`;
+  resultsHintDesktop.textContent = text;
+  resultsHintMobile.textContent = text;
 }
 
 function render(videos) {
@@ -110,7 +113,7 @@ function render(videos) {
 
     el.innerHTML = `
       <a href="bridge.html?id=${v.id}">
-        <img class="thumb" src="${v.thumbnail}">
+        <img class="thumb" src="${v.thumbnail}" alt="${v.title}">
         <div class="card-body">
           <div class="title">${v.title}</div>
           <div class="meta">${v.duration} • ${v.views} views</div>
@@ -118,7 +121,27 @@ function render(videos) {
       </a>
     `;
 
-    el.querySelector("a").addEventListener("click", () => {
+    const link = el.querySelector("a");
+
+    el._isDragging = false;
+
+    el.addEventListener("touchstart", e => {
+      el._startX = e.touches[0].clientX;
+      el._startY = e.touches[0].clientY;
+      el._isDragging = false;
+    }, { passive: true });
+
+    el.addEventListener("touchmove", e => {
+      const dx = Math.abs(e.touches[0].clientX - el._startX);
+      const dy = Math.abs(e.touches[0].clientY - el._startY);
+      if (dx > 10 || dy > 10) el._isDragging = true;
+    }, { passive: true });
+
+    link.addEventListener("click", e => {
+      if (el._isDragging) {
+        e.preventDefault();
+        return;
+      }
       watched.add(v.id);
       localStorage.setItem("watched", JSON.stringify([...watched]));
       el.classList.add("watched");
@@ -144,6 +167,7 @@ async function load(reset = false) {
 
   loader.style.display = "block";
   loadMoreBtn.style.display = "none";
+  emptyState.style.display = "none";
 
   const batch = await fetchUniqueBatch();
   render(batch);
@@ -151,27 +175,27 @@ async function load(reset = false) {
   loader.style.display = "none";
   loading = false;
 
-  emptyState.style.display =
-    gallery.children.length === 0 ? "block" : "none";
-
-  if (batch.length === PAGE_SIZE)
-    loadMoreBtn.style.display = "block";
+  if (!gallery.children.length) emptyState.style.display = "block";
+  if (batch.length === PAGE_SIZE) loadMoreBtn.style.display = "block";
 }
 
 /* ---------- Filters ---------- */
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    if (btn.dataset.sort && btn.dataset.sort !== activeSort) {
-      activeSort = btn.dataset.sort;
-      syncToURL();
-      updateActiveButtons();
-      load(true);
+    if (btn.dataset.sort) {
+      if (btn.dataset.sort !== activeSort) {
+        activeSort = btn.dataset.sort;
+        syncToURL();
+        updateActiveButtons();
+        load(true);
+      }
       return;
     }
 
     if (btn.dataset.length) {
       activeLength =
         activeLength === btn.dataset.length ? null : btn.dataset.length;
+
       syncToURL();
       updateActiveButtons();
       load(true);
@@ -179,16 +203,51 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
   });
 });
 
-/* ---------- Back to top (RESTORED) ---------- */
+/* ---------- Search ---------- */
+let searchTimer;
+function handleSearch(val) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentQuery = val.trim();
+    syncToURL();
+    load(true);
+  }, 400);
+}
+
+searchDesktop.addEventListener("input", e => {
+  clearDesktop.style.display = e.target.value ? "block" : "none";
+  searchMobile.value = e.target.value;
+  handleSearch(e.target.value);
+});
+
+searchMobile.addEventListener("input", e => {
+  clearMobile.style.display = e.target.value ? "block" : "none";
+  searchDesktop.value = e.target.value;
+  handleSearch(e.target.value);
+});
+
+clearDesktop.addEventListener("click", () => {
+  searchDesktop.value = "";
+  searchMobile.value = "";
+  clearDesktop.style.display = "none";
+  clearMobile.style.display = "none";
+  currentQuery = "";
+  syncToURL();
+  load(true);
+});
+
+clearMobile.addEventListener("click", () => clearDesktop.click());
+
+loadMoreBtn.addEventListener("click", () => load());
+
 window.addEventListener("scroll", () => {
-  backToTop.classList.toggle("visible", window.scrollY > 600);
-  desktopControls.classList.toggle("compact", window.scrollY > 80);
+  backToTop.classList.toggle("visible", window.scrollY > 500);
+  if (desktopControls) desktopControls.classList.toggle("compact", window.scrollY > 40);
 });
 
 backToTop.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
-/* ---------- Init ---------- */
 syncFromURL();
 load(true);
