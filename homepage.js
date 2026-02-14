@@ -8,7 +8,6 @@ let activeLength = null;
 let currentQuery = "";
 let loading = false;
 
-/* const seenIds = new Set(); ------ removed*/ 
 const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
 
 /* ---------- SESSION SEED FOR DISCOVER ---------- */
@@ -58,16 +57,14 @@ function syncToURL() {
 
 function updateActiveButtons() {
   document.querySelectorAll(".filter-btn").forEach(btn => {
-    if (btn.dataset.sort) {
+    if (btn.dataset.sort)
       btn.classList.toggle("active", btn.dataset.sort === activeSort);
-    }
-    if (btn.dataset.length) {
+    if (btn.dataset.length)
       btn.classList.toggle("active", btn.dataset.length === activeLength);
-    }
   });
 }
 
-/* ---------- Fetch unique ---------- */
+/* ---------- Fetch ---------- */
 async function fetchUniqueBatch() {
   const data = await fetchVideos({
     limit: PAGE_SIZE,
@@ -78,12 +75,7 @@ async function fetchUniqueBatch() {
     discoverSeed: activeSort === "discover" ? discoverSeed : undefined
   });
 
-  if (data.nextOffset != null) {
-    offset = data.nextOffset;
-  } else {
-    offset = null;
-  }
-
+  offset = data.nextOffset != null ? data.nextOffset : null;
   return data.videos;
 }
 
@@ -95,14 +87,22 @@ function updateResultsHint() {
 }
 
 function render(videos) {
+  const fragment = document.createDocumentFragment();
+
   videos.forEach(v => {
     const el = document.createElement("div");
     el.className = "card fade-in";
+    el.dataset.id = v.id;
+
     if (watched.has(v.id)) el.classList.add("watched");
 
     el.innerHTML = `
-      <a href="bridge.html?id=${v.id}">
-        <img class="thumb" src="${v.thumbnail}" alt="${v.title}">
+      <a href="bridge.html?id=${v.id}" class="card-link">
+        <img class="thumb"
+             src="${v.thumbnail}"
+             alt="${v.title}"
+             loading="lazy"
+             decoding="async">
         <div class="card-body">
           <div class="title">${v.title}</div>
           <div class="meta">${v.duration} • ${v.views} views</div>
@@ -110,37 +110,53 @@ function render(videos) {
       </a>
     `;
 
-    const link = el.querySelector("a");
-
-    el._isDragging = false;
-
-    el.addEventListener("touchstart", e => {
-      el._startX = e.touches[0].clientX;
-      el._startY = e.touches[0].clientY;
-      el._isDragging = false;
-    }, { passive: true });
-
-    el.addEventListener("touchmove", e => {
-      const dx = Math.abs(e.touches[0].clientX - el._startX);
-      const dy = Math.abs(e.touches[0].clientY - el._startY);
-      if (dx > 10 || dy > 10) el._isDragging = true;
-    }, { passive: true });
-
-    link.addEventListener("click", e => {
-      if (el._isDragging) {
-        e.preventDefault();
-        return;
-      }
-      watched.add(v.id);
-      localStorage.setItem("watched", JSON.stringify([...watched]));
-      el.classList.add("watched");
-    });
-
-    gallery.appendChild(el);
+    fragment.appendChild(el);
   });
 
+  gallery.appendChild(fragment);
   updateResultsHint();
 }
+
+/* ---------- Event Delegation (Mobile Drag Fix + Watched) ---------- */
+
+let touchStartX = 0;
+let touchStartY = 0;
+let isDragging = false;
+
+gallery.addEventListener("touchstart", e => {
+  const card = e.target.closest(".card");
+  if (!card) return;
+
+  const touch = e.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+  isDragging = false;
+}, { passive: true });
+
+gallery.addEventListener("touchmove", e => {
+  const touch = e.touches[0];
+  const dx = Math.abs(touch.clientX - touchStartX);
+  const dy = Math.abs(touch.clientY - touchStartY);
+  if (dx > 10 || dy > 10) isDragging = true;
+}, { passive: true });
+
+gallery.addEventListener("click", e => {
+  const link = e.target.closest(".card-link");
+  if (!link) return;
+
+  const card = link.closest(".card");
+  if (!card) return;
+
+  if (isDragging) {
+    e.preventDefault();
+    return;
+  }
+
+  const id = card.dataset.id;
+  watched.add(id);
+  localStorage.setItem("watched", JSON.stringify([...watched]));
+  card.classList.add("watched");
+});
 
 /* ---------- Load ---------- */
 async function load(reset = false) {
@@ -150,7 +166,6 @@ async function load(reset = false) {
   if (reset) {
     gallery.innerHTML = "";
     offset = 0;
-    /* seenIds.clear();              ------removed-- */
     window.scrollTo({ top: 0 });
   }
 
@@ -171,20 +186,17 @@ async function load(reset = false) {
 /* ---------- Filters ---------- */
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    if (btn.dataset.sort) {
-      if (btn.dataset.sort !== activeSort) {
-        activeSort = btn.dataset.sort;
-        syncToURL();
-        updateActiveButtons();
-        load(true);
-      }
+    if (btn.dataset.sort && btn.dataset.sort !== activeSort) {
+      activeSort = btn.dataset.sort;
+      syncToURL();
+      updateActiveButtons();
+      load(true);
       return;
     }
 
     if (btn.dataset.length) {
       activeLength =
         activeLength === btn.dataset.length ? null : btn.dataset.length;
-
       syncToURL();
       updateActiveButtons();
       load(true);
@@ -194,6 +206,7 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
 
 /* ---------- Search ---------- */
 let searchTimer;
+
 function handleSearch(val) {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
@@ -231,7 +244,8 @@ loadMoreBtn.addEventListener("click", () => load());
 
 window.addEventListener("scroll", () => {
   backToTop.classList.toggle("visible", window.scrollY > 500);
-  if (desktopControls) desktopControls.classList.toggle("compact", window.scrollY > 40);
+  if (desktopControls)
+    desktopControls.classList.toggle("compact", window.scrollY > 40);
 });
 
 backToTop.addEventListener("click", () => {
