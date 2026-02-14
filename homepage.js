@@ -81,7 +81,6 @@ async function fetchUniqueBatch() {
       discoverSeed: activeSort === "discover" ? discoverSeed : undefined
     });
 
-    offset = data.nextOffset;
     if (!data.videos.length) break;
 
     for (const v of data.videos) {
@@ -92,7 +91,8 @@ async function fetchUniqueBatch() {
       }
     }
 
-    if (!data.nextOffset) break;
+    if (data.nextOffset == null) break;
+    offset = data.nextOffset;
   }
 
   return collected;
