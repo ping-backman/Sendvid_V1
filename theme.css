@@ -291,3 +291,57 @@ button.secondary { background: var(--panel-soft); }
   .controls-desktop { display: none; }
   .controls-mobile { display: block; }
 }
+
+/* Addational styling for the video page appended here----*/
+
+/* ===== VIDEO HEADER ===== */
+.video-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.home-btn {
+  padding: 6px 12px;
+}
+
+/* ===== PLAYER ===== */
+.player-wrapper {
+  width: 100%;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.thumbnail-overlay {
+  position: relative;
+  cursor: pointer;
+}
+
+.video-thumb {
+  width: 100%;
+  border-radius: 12px;
+  display: block;
+}
+
+.play-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,.7);
+  border: none;
+  color: #fff;
+  font-size: 42px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
