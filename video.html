@@ -1,18 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Watch</title>
+  <title>Watch Video</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/theme.css">
 </head>
 <body>
-  <div class="container">
-    <div id="player"></div>
 
-    <h2>Similar Videos</h2>
-    <div id="similar" class="grid"></div>
+<div class="container">
+
+  <!-- ======= HEADER ======= -->
+  <div class="video-header">
+    <a href="/" class="logo">Sendvid</a>
+    <a href="/" class="home-btn secondary">Home</a>
   </div>
 
-  <script type="module" src="/video.js"></script>
+  <!-- ======= DESKTOP CONTROLS (Simplified) ======= -->
+  <div class="controls-desktop sticky">
+    <div class="filters">
+      <button class="filter-btn" data-sort="relevance">Relevant</button>
+      <button class="filter-btn" data-sort="popular">Popular</button>
+      <button class="filter-btn" data-sort="newest">Newest</button>
+      <button class="filter-btn active" data-sort="discover">Discover</button>
+      <span class="divider">|</span>
+      <div id="resultsHintDesktop" class="results-hint"></div>
+    </div>
+
+    <div class="search search-desktop">
+      <input id="q-desktop" placeholder="Search keyword or tag">
+      <button id="clearSearchDesktop">×</button>
+    </div>
+  </div>
+
+  <!-- ======= VIDEO SECTION ======= -->
+  <div class="video-section">
+
+    <div id="playerWrapper" class="player-wrapper"></div>
+
+    <h1 id="videoTitle"></h1>
+    <div id="videoMeta" class="meta"></div>
+
+  </div>
+
+  <!-- ======= DISCOVER ======= -->
+  <h2 style="margin-top:40px">Discover More</h2>
+
+  <div id="discoverGrid" class="grid"></div>
+
+  <div id="loader" class="loader">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  </div>
+
+  <button id="loadMore" class="secondary load-more">Load More</button>
+
+</div>
+
+<script type="module" src="/video.js"></script>
 </body>
 </html>
