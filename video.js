@@ -11,11 +11,11 @@ let currentQuery = "";
 let loading = false;
 
 const discoverSeed = sessionStorage.getItem("discoverSeed") ||
-  (() => {
-    const s = Math.random().toString(36).slice(2);
-    sessionStorage.setItem("discoverSeed", s);
-    return s;
-  })();
+(() => {
+  const s = Math.random().toString(36).slice(2);
+  sessionStorage.setItem("discoverSeed", s);
+  return s;
+})();
 
 const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
 
@@ -52,32 +52,23 @@ async function loadVideo() {
 
 function renderThumbnailPlayer(video) {
   playerWrapper.innerHTML = `
-    <div class="player-wrapper-inner">
       <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}">
       <button class="play-btn">▶</button>
       <iframe
         class="video-frame"
-        src=""
         allow="autoplay; fullscreen"
         sandbox="allow-scripts allow-same-origin"
         frameborder="0">
       </iframe>
-    </div>
   `;
 
   const thumb = playerWrapper.querySelector(".video-thumb");
   const frame = playerWrapper.querySelector(".video-frame");
   const playBtn = playerWrapper.querySelector(".play-btn");
 
-  frame.style.display = "none";
-
   function playVideo() {
-
-    // future monetization trigger goes here
-
     frame.src = `${video.embed}${video.embed.includes("?") ? "&" : "?"}autoplay=1`;
     frame.style.display = "block";
-
     thumb.style.display = "none";
     playBtn.style.display = "none";
   }
@@ -165,14 +156,10 @@ async function load(reset = false) {
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     if (btn.dataset.sort === activeSort) return;
-
     activeSort = btn.dataset.sort;
-
     document.querySelectorAll(".filter-btn")
       .forEach(b => b.classList.remove("active"));
-
     btn.classList.add("active");
-
     load(true);
   });
 });
@@ -198,7 +185,7 @@ clearDesktop.addEventListener("click", () => {
   load(true);
 });
 
-/* ================= WATCHED TRACKING ================= */
+/* ================= WATCHED ================= */
 
 grid.addEventListener("click", e => {
   const link = e.target.closest(".card-link");
@@ -211,26 +198,24 @@ grid.addEventListener("click", e => {
 
   watched.add(vid);
   localStorage.setItem("watched", JSON.stringify([...watched]));
-
   card.classList.add("watched");
 });
 
-/*=== Adde back to top button listener script==== */
-<script>
-const btn = document.getElementById("backToTop");
+/* ================= BACK TO TOP ================= */
+
+const backBtn = document.getElementById("backToTop");
 
 window.addEventListener("scroll", () => {
   if (window.scrollY > 400) {
-    btn.classList.add("visible");
+    backBtn.classList.add("visible");
   } else {
-    btn.classList.remove("visible");
+    backBtn.classList.remove("visible");
   }
 });
 
-btn.addEventListener("click", () => {
+backBtn.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
-</script>
 
 /* ================= INIT ================= */
 
