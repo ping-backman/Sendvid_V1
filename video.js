@@ -10,23 +10,14 @@ let activeSort = "discover";
 let currentQuery = "";
 let loading = false;
 
-/* ================= SEED ================= */
+const discoverSeed = sessionStorage.getItem("discoverSeed") ||
+(() => {
+  const s = Math.random().toString(36).slice(2);
+  sessionStorage.setItem("discoverSeed", s);
+  return s;
+})();
 
-const discoverSeed =
-  sessionStorage.getItem("discoverSeed") ||
-  (() => {
-    const s = Math.random().toString(36).slice(2);
-    sessionStorage.setItem("discoverSeed", s);
-    return s;
-  })();
-
-/* ================= WATCHED ================= */
-
-const watched = new Set(
-  JSON.parse(localStorage.getItem("watched") || "[]")
-);
-
-/* ================= DOM ================= */
+const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
 
 const playerWrapper = document.getElementById("playerWrapper");
 const videoTitle = document.getElementById("videoTitle");
@@ -40,8 +31,6 @@ const resultsHintDesktop = document.getElementById("resultsHintDesktop");
 
 const searchDesktop = document.getElementById("q-desktop");
 const clearDesktop = document.getElementById("clearSearchDesktop");
-
-const backBtn = document.getElementById("backToTop");
 
 /* ================= VIDEO LOAD ================= */
 
@@ -63,14 +52,14 @@ async function loadVideo() {
 
 function renderThumbnailPlayer(video) {
   playerWrapper.innerHTML = `
-    <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}">
-    <button class="play-btn">▶</button>
-    <iframe
-      class="video-frame"
-      allow="autoplay; fullscreen"
-      sandbox="allow-scripts allow-same-origin"
-      frameborder="0">
-    </iframe>
+      <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}">
+      <button class="play-btn">▶</button>
+      <iframe
+        class="video-frame"
+        allow="autoplay; fullscreen"
+        sandbox="allow-scripts allow-same-origin"
+        frameborder="0">
+      </iframe>
   `;
 
   const thumb = playerWrapper.querySelector(".video-thumb");
@@ -99,7 +88,7 @@ async function fetchBatch() {
     discoverSeed
   });
 
-  offset = data.nextOffset ?? null;
+  offset = data.nextOffset != null ? data.nextOffset : null;
   return data.videos;
 }
 
@@ -149,4 +138,88 @@ async function load(reset = false) {
   }
 
   loader.style.display = "block";
-  loadMoreBtn.sty
+  loadMoreBtn.style.display = "none";
+
+  const batch = await fetchBatch();
+  render(batch);
+
+  loader.style.display = "none";
+  loading = false;
+
+  if (batch.length === PAGE_SIZE) {
+    loadMoreBtn.style.display = "block";
+  }
+}
+
+/* ================= FILTERS ================= */
+
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (btn.dataset.sort === activeSort) return;
+    activeSort = btn.dataset.sort;
+    document.querySelectorAll(".filter-btn")
+      .forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    load(true);
+  });
+});
+
+/* ================= SEARCH ================= */
+
+let searchTimer;
+
+searchDesktop.addEventListener("input", e => {
+  clearDesktop.style.display = e.target.value ? "block" : "none";
+
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentQuery = e.target.value.trim();
+    load(true);
+  }, 400);
+});
+
+clearDesktop.addEventListener("click", () => {
+  searchDesktop.value = "";
+  clearDesktop.style.display = "none";
+  currentQuery = "";
+  load(true);
+});
+
+/* ================= WATCHED ================= */
+
+grid.addEventListener("click", e => {
+  const link = e.target.closest(".card-link");
+  if (!link) return;
+
+  const card = link.closest(".card");
+  if (!card) return;
+
+  const vid = card.dataset.id;
+
+  watched.add(vid);
+  localStorage.setItem("watched", JSON.stringify([...watched]));
+  card.classList.add("watched");
+});
+
+/* ================= BACK TO TOP ================= */
+
+const backBtn = document.getElementById("backToTop");
+
+window.addEventListener("scroll", () => {
+  if (window.scrollY > 400) {
+    backBtn.classList.add("visible");
+  } else {
+    backBtn.classList.remove("visible");
+  }
+});
+
+backBtn.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+/* ================= INIT ================= */
+
+loadVideo();
+load(true);
+
+loadMoreBtn.addEventListener("click", () => load());
