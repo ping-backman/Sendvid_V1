@@ -215,6 +215,23 @@ grid.addEventListener("click", e => {
   card.classList.add("watched");
 });
 
+/*=== Adde back to top button listener script==== */
+<script>
+const btn = document.getElementById("backToTop");
+
+window.addEventListener("scroll", () => {
+  if (window.scrollY > 400) {
+    btn.classList.add("visible");
+  } else {
+    btn.classList.remove("visible");
+  }
+});
+
+btn.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+</script>
+
 /* ================= INIT ================= */
 
 loadVideo();
