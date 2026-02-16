@@ -394,6 +394,6 @@ button.secondary { background: var(--panel-soft); }
   transition: background .25s ease;
 }
 
-.play-btn:hover {
+/*.play-btn:hover {
   background: rgba(0,0,0,.85);
-}
+}  */
