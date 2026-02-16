@@ -345,7 +345,7 @@ button.secondary { background: var(--panel-soft); }
   cursor: pointer;
 }
 /* ===== DESKTOP PLAYER CONSTRAINT FOR VIDEO PAGE ===== */
-/* ===== PLAYER WRAPPER ===== */
+/* ===== PLAYER (VIDEO PAGE ONLY) ===== */
 
 .player-wrapper {
   position: relative;
@@ -358,7 +358,6 @@ button.secondary { background: var(--panel-soft); }
   overflow: hidden;
 }
 
-/* Shared sizing */
 .player-wrapper iframe,
 .player-wrapper img.video-thumb {
   position: absolute;
@@ -368,20 +367,17 @@ button.secondary { background: var(--panel-soft); }
   border: 0;
 }
 
-/* Thumbnail visible by default */
 .video-thumb {
-  object-fit: contain;  /* or cover if you prefer */
+  object-fit: contain;
   cursor: pointer;
-  z-index: 2;           /* above iframe */
+  z-index: 2;
 }
 
-/* Hide iframe initially */
 .player-wrapper iframe {
   display: none;
   z-index: 1;
 }
 
-/* Play button on top */
 .play-btn {
   position: absolute;
   top: 50%;
@@ -395,7 +391,7 @@ button.secondary { background: var(--panel-soft); }
   color: #fff;
   font-size: 34px;
   cursor: pointer;
-  z-index: 3;  /* highest layer */
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;
