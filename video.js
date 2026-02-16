@@ -1,6 +1,6 @@
 import { fetchVideos } from "/api.js";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 20;
 
 const params = new URLSearchParams(location.search);
 const id = params.get("id");
@@ -52,33 +52,38 @@ async function loadVideo() {
 
 function renderThumbnailPlayer(video) {
   playerWrapper.innerHTML = `
-    <div class="thumbnail-overlay">
-      <img src="${video.thumbnail}" class="video-thumb">
+    <div class="player-wrapper-inner">
+      <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}">
       <button class="play-btn">▶</button>
+      <iframe
+        class="video-frame"
+        src=""
+        allow="autoplay; fullscreen"
+        sandbox="allow-scripts allow-same-origin"
+        frameborder="0">
+      </iframe>
     </div>
   `;
 
-  const overlay = playerWrapper.querySelector(".thumbnail-overlay");
+  const thumb = playerWrapper.querySelector(".video-thumb");
+  const frame = playerWrapper.querySelector(".video-frame");
   const playBtn = playerWrapper.querySelector(".play-btn");
 
-  playBtn.addEventListener("click", () => {
+  frame.style.display = "none";
 
-    // future monetization trigger can go here
+  function playVideo() {
 
-    overlay.remove();
+    // future monetization trigger goes here
 
-    playerWrapper.innerHTML = `
-      <iframe
-        width="100%"
-        height="500"
-        src="${video.embed}"
-        frameborder="0"
-        allowfullscreen
-        sandbox="allow-scripts allow-same-origin"
-        allow="autoplay; fullscreen">
-      </iframe>
-    `;
-  });
+    frame.src = `${video.embed}${video.embed.includes("?") ? "&" : "?"}autoplay=1`;
+    frame.style.display = "block";
+
+    thumb.style.display = "none";
+    playBtn.style.display = "none";
+  }
+
+  thumb.addEventListener("click", playVideo);
+  playBtn.addEventListener("click", playVideo);
 }
 
 /* ================= DISCOVER ================= */
@@ -160,10 +165,14 @@ async function load(reset = false) {
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     if (btn.dataset.sort === activeSort) return;
+
     activeSort = btn.dataset.sort;
+
     document.querySelectorAll(".filter-btn")
       .forEach(b => b.classList.remove("active"));
+
     btn.classList.add("active");
+
     load(true);
   });
 });
@@ -199,8 +208,10 @@ grid.addEventListener("click", e => {
   if (!card) return;
 
   const vid = card.dataset.id;
+
   watched.add(vid);
   localStorage.setItem("watched", JSON.stringify([...watched]));
+
   card.classList.add("watched");
 });
 
