@@ -345,18 +345,19 @@ button.secondary { background: var(--panel-soft); }
   cursor: pointer;
 }
 /* ===== DESKTOP PLAYER CONSTRAINT FOR VIDEO PAGE ===== */
-.player-wrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-}
+@media (min-width: 901px) {
+  .video-section {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
 
-.player-wrapper iframe,
-.video-thumb {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+  .player-wrapper {
+    max-width: 1000px;
+    margin: 0 auto 20px;
+  }
 
+  .video-thumb {
+    border-radius: 14px;
+  }
+}
 
