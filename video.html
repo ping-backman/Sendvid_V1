@@ -10,13 +10,13 @@
 
 <div class="container">
 
-  <!-- ======= HEADER ======= -->
+  <!-- ===== HEADER ===== -->
   <div class="video-header">
     <a href="/" class="logo">Sendvid</a>
     <a href="/" class="home-btn secondary">Home</a>
   </div>
 
-  <!-- ======= DESKTOP CONTROLS ======= -->
+  <!-- ===== CONTROLS ===== -->
   <div class="controls-desktop sticky">
     <div class="filters">
       <button class="filter-btn" data-sort="relevance">Relevant</button>
@@ -33,26 +33,36 @@
     </div>
   </div>
 
-  <!-- ======= VIDEO SECTION ======= -->
-  <div class="video-section">
+  <!-- ===== MAIN LAYOUT ===== -->
+  <div class="video-layout">
 
-    <div id="playerWrapper" class="player-wrapper"></div>
+    <!-- LEFT COLUMN -->
+    <div class="main-column">
 
-    <h1 id="videoTitle"></h1>
-    <div id="videoMeta" class="meta"></div>
+      <div class="video-section">
+        <div id="playerWrapper" class="player-wrapper"></div>
+        <h1 id="videoTitle"></h1>
+        <div id="videoMeta" class="meta"></div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="side-column">
+
+      <h2 class="section-title">Up Next</h2>
+
+      <div id="discoverGrid" class="grid side-grid"></div>
+
+      <div id="loader" class="loader">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+
+      <button id="loadMore" class="secondary load-more">Load More</button>
+
+    </div>
 
   </div>
-
-  <!-- ======= DISCOVER ======= -->
-  <h2 style="margin-top:40px">Discover More</h2>
-
-  <div id="discoverGrid" class="grid"></div>
-
-  <div id="loader" class="loader">
-    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-  </div>
-
-  <button id="loadMore" class="secondary load-more">Load More</button>
 
 </div>
 
