@@ -344,8 +344,8 @@ button.secondary { background: var(--panel-soft); }
   border-radius: 50%;
   cursor: pointer;
 }
-/* ===== DESKTOP PLAYER CONSTRAINT FOR VIDEO PAGE ===== */
-/* ===== PLAYER (VIDEO PAGE ONLY) ===== */
+
+/* ===== VIDEO PAGE PLAYER CSS===== */
 
 .player-wrapper {
   position: relative;
@@ -400,4 +400,5 @@ button.secondary { background: var(--panel-soft); }
 .play-btn:hover {
   background: rgba(0,0,0,.85);
 }
+
 
