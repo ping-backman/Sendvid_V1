@@ -39,38 +39,4 @@ a { color: inherit; text-decoration: none; }
   transform: translateY(-3px);
   box-shadow: 0 8px 20px rgba(0,0,0,.4);
 }
-@media (hover: none) and (pointer: coarse) {
-  .card:hover, .card:hover a { transform: none; box-shadow: none; }
-}
-
-/* ================= WATCHED ICON ================= */
-.card.watched img.thumb { filter: brightness(0.7); }
-.card.watched::after {
-  content: "✔";
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 14px;
-  font-weight: bold;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0,0,0,.6);
-  pointer-events: none;
-  z-index: 5;
-}
-
-/* ================= THUMBNAILS ================= */
-.thumb { width: 100%; height: 280px; object-fit: cover; display: block; }
-@media (max-width: 900px) { .thumb { height: 180px; object-fit: cover; } }
-.card a { display: flex; flex-direction: column; height: 100%; padding: 4px; border-radius: 10px; }
-.card, .card a { -webkit-tap-highlight-color: transparent; }
-
-/* ================= CARD CONTENT ================= */
-.card-body { padding: 10px; }
-.title
+@media (hover: none) and (pointer:
