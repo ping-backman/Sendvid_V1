@@ -1,7 +1,7 @@
 import { fetchVideos } from "/api.js";
 
 const PAGE_SIZE = 20;
-const UP_NEXT_COUNT = 4;
+const UP_NEXT_COUNT = 3;
 
 const params = new URLSearchParams(location.search);
 const id = params.get("id");
