@@ -1,6 +1,7 @@
 import { fetchVideos } from "/api.js";
 
 const PAGE_SIZE = 20;
+const UP_NEXT_COUNT = 5;
 
 const params = new URLSearchParams(location.search);
 const id = params.get("id");
@@ -23,6 +24,7 @@ const playerWrapper = document.getElementById("playerWrapper");
 const videoTitle = document.getElementById("videoTitle");
 const videoMeta = document.getElementById("videoMeta");
 
+const upNextGrid = document.getElementById("upNextGrid");
 const grid = document.getElementById("discoverGrid");
 const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
@@ -77,11 +79,11 @@ function renderThumbnailPlayer(video) {
   playBtn.addEventListener("click", playVideo);
 }
 
-/* ================= DISCOVER ================= */
+/* ================= FETCH ================= */
 
-async function fetchBatch() {
+async function fetchBatch(limit) {
   const data = await fetchVideos({
-    limit: PAGE_SIZE,
+    limit,
     offset,
     sort: activeSort,
     q: currentQuery,
@@ -92,12 +94,35 @@ async function fetchBatch() {
   return data.videos;
 }
 
-function updateResultsHint() {
-  resultsHintDesktop.textContent =
-    `Showing ${grid.children.length} videos`;
+/* ================= RENDER ================= */
+
+function renderUpNext(videos) {
+  upNextGrid.innerHTML = "";
+
+  videos.slice(0, UP_NEXT_COUNT).forEach(v => {
+    const el = document.createElement("div");
+    el.className = "card side-card";
+    el.dataset.id = v.id;
+
+    el.innerHTML = `
+      <a href="bridge.html?id=${v.id}" class="card-link">
+        <img class="thumb"
+             src="${v.thumbnail}"
+             alt="${v.title}"
+             loading="lazy"
+             decoding="async">
+        <div class="card-body">
+          <div class="title">${v.title}</div>
+          <div class="meta">${v.duration} • ${v.views} views</div>
+        </div>
+      </a>
+    `;
+
+    upNextGrid.appendChild(el);
+  });
 }
 
-function render(videos) {
+function renderGrid(videos) {
   const fragment = document.createDocumentFragment();
 
   videos.forEach(v => {
@@ -125,8 +150,10 @@ function render(videos) {
   });
 
   grid.appendChild(fragment);
-  updateResultsHint();
+  resultsHintDesktop.textContent = `Showing ${grid.children.length} videos`;
 }
+
+/* ================= LOAD ================= */
 
 async function load(reset = false) {
   if (loading) return;
@@ -140,8 +167,11 @@ async function load(reset = false) {
   loader.style.display = "block";
   loadMoreBtn.style.display = "none";
 
-  const batch = await fetchBatch();
-  render(batch);
+  const batch = await fetchBatch(PAGE_SIZE);
+
+  if (reset) renderUpNext(batch);
+
+  renderGrid(batch);
 
   loader.style.display = "none";
   loading = false;
@@ -151,7 +181,7 @@ async function load(reset = false) {
   }
 }
 
-/* ================= FILTERS ================= */
+/* ================= SEARCH & FILTER ================= */
 
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -163,8 +193,6 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
     load(true);
   });
 });
-
-/* ================= SEARCH ================= */
 
 let searchTimer;
 
@@ -183,38 +211,6 @@ clearDesktop.addEventListener("click", () => {
   clearDesktop.style.display = "none";
   currentQuery = "";
   load(true);
-});
-
-/* ================= WATCHED ================= */
-
-grid.addEventListener("click", e => {
-  const link = e.target.closest(".card-link");
-  if (!link) return;
-
-  const card = link.closest(".card");
-  if (!card) return;
-
-  const vid = card.dataset.id;
-
-  watched.add(vid);
-  localStorage.setItem("watched", JSON.stringify([...watched]));
-  card.classList.add("watched");
-});
-
-/* ================= BACK TO TOP ================= */
-
-const backBtn = document.getElementById("backToTop");
-
-window.addEventListener("scroll", () => {
-  if (window.scrollY > 400) {
-    backBtn.classList.add("visible");
-  } else {
-    backBtn.classList.remove("visible");
-  }
-});
-
-backBtn.addEventListener("click", () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 /* ================= INIT ================= */
