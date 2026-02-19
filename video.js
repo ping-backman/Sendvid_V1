@@ -34,21 +34,23 @@ const searchDesktop = document.getElementById("q-desktop");
 const clearDesktop = document.getElementById("clearSearchDesktop");
 
 /* ================= VIDEO ================= */
-
 async function loadVideo() {
-  const data = await fetchVideos({ id });
+  try {
+    const data = await fetchVideos({ id });
+    if (!data?.video) {
+      videoTitle.textContent = "Video not found";
+      return;
+    }
 
-  if (!data.video) {
-    videoTitle.textContent = "Video not found";
-    return;
+    const v = data.video;
+    videoTitle.textContent = v.title;
+    videoMeta.textContent = `${v.duration} • ${v.views} views`;
+
+    renderThumbnailPlayer(v);
+  } catch (err) {
+    console.error(err);
+    videoTitle.textContent = "Error loading video";
   }
-
-  const v = data.video;
-
-  videoTitle.textContent = v.title;
-  videoMeta.textContent = `${v.duration} • ${v.views} views`;
-
-  renderThumbnailPlayer(v);
 }
 
 function renderThumbnailPlayer(video) {
@@ -67,81 +69,82 @@ function renderThumbnailPlayer(video) {
   const frame = playerWrapper.querySelector(".video-frame");
   const playBtn = playerWrapper.querySelector(".play-btn");
 
-  function playVideo() {
+  const playVideo = () => {
     frame.src = `${video.embed}${video.embed.includes("?") ? "&" : "?"}autoplay=1`;
     frame.style.display = "block";
     thumb.style.display = "none";
     playBtn.style.display = "none";
-  }
+  };
 
   thumb.addEventListener("click", playVideo);
   playBtn.addEventListener("click", playVideo);
 }
 
 /* ================= FETCH ================= */
-
 async function fetchBatch(limit) {
-  const data = await fetchVideos({
-    limit,
-    offset,
-    sort: activeSort,
-    q: currentQuery,
-    discoverSeed
-  });
+  try {
+    const data = await fetchVideos({
+      limit,
+      offset,
+      sort: activeSort,
+      q: currentQuery,
+      discoverSeed
+    });
 
-  offset = data.nextOffset != null ? data.nextOffset : null;
-  return data.videos;
+    offset = data.nextOffset ?? null;
+    return data.videos ?? [];
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
 }
 
 /* ================= RENDER ================= */
-
 function createCard(v, side = false) {
   const el = document.createElement("div");
   el.className = `card ${side ? "side-card" : "fade-in"}`;
   el.dataset.id = v.id;
 
-  if (watched.has(v.id) && !side) {
-    el.classList.add("watched");
-  }
+  if (watched.has(v.id) && !side) el.classList.add("watched");
 
-  el.innerHTML = `
-    <a href="bridge.html?id=${v.id}" class="card-link">
-      <img class="thumb"
-           src="${v.thumbnail}"
-           alt="${v.title}"
-           loading="lazy"
-           decoding="async">
-      <div class="card-body">
-        <div class="title">${v.title}</div>
-        <div class="meta">${v.duration} • ${v.views} views</div>
-      </div>
-    </a>
-  `;
+  if (side) {
+    el.innerHTML = `
+      <a href="bridge.html?id=${v.id}" class="card-link side-card-link">
+        <img class="thumb" src="${v.thumbnail}" alt="${v.title}">
+        <div class="card-body">
+          <div class="title">${v.title}</div>
+          <div class="meta">${v.duration} • ${v.views} views</div>
+        </div>
+      </a>
+    `;
+  } else {
+    el.innerHTML = `
+      <a href="bridge.html?id=${v.id}" class="card-link">
+        <img class="thumb" src="${v.thumbnail}" alt="${v.title}" loading="lazy" decoding="async">
+        <div class="card-body">
+          <div class="title">${v.title}</div>
+          <div class="meta">${v.duration} • ${v.views} views</div>
+        </div>
+      </a>
+    `;
+  }
 
   return el;
 }
 
 function renderUpNext(videos) {
   upNextGrid.innerHTML = "";
-
-  videos.slice(0, UP_NEXT_COUNT).forEach(v => {
-    upNextGrid.appendChild(createCard(v, true));
-  });
+  videos.slice(0, UP_NEXT_COUNT).forEach(v => upNextGrid.appendChild(createCard(v, true)));
 }
 
 function renderGrid(videos) {
   const fragment = document.createDocumentFragment();
-
-  videos.forEach(v => {
-    fragment.appendChild(createCard(v, false));
-  });
-
+  videos.forEach(v => fragment.appendChild(createCard(v, false)));
   grid.appendChild(fragment);
   resultsHintDesktop.textContent = `Showing ${grid.children.length} videos`;
 }
 
 /* ================= LOAD ================= */
-
 async function load(reset = false) {
   if (loading) return;
   loading = true;
@@ -155,48 +158,36 @@ async function load(reset = false) {
   loadMoreBtn.style.display = "none";
 
   const batch = await fetchBatch(PAGE_SIZE);
-
   if (reset) renderUpNext(batch);
-
   renderGrid(batch);
 
   loader.style.display = "none";
   loading = false;
-
-  if (batch.length === PAGE_SIZE) {
-    loadMoreBtn.style.display = "block";
-  }
+  loadMoreBtn.style.display = batch.length === PAGE_SIZE ? "block" : "none";
 }
 
 /* ================= FILTERS ================= */
-
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     if (btn.dataset.sort === activeSort) return;
     activeSort = btn.dataset.sort;
 
-    document.querySelectorAll(".filter-btn")
-      .forEach(b => b.classList.remove("active"));
-
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     load(true);
   });
 });
 
 /* ================= SEARCH ================= */
-
 let searchTimer;
-
 searchDesktop.addEventListener("input", e => {
   clearDesktop.style.display = e.target.value ? "block" : "none";
-
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
     currentQuery = e.target.value.trim();
     load(true);
   }, 400);
 });
-
 clearDesktop.addEventListener("click", () => {
   searchDesktop.value = "";
   clearDesktop.style.display = "none";
@@ -205,24 +196,13 @@ clearDesktop.addEventListener("click", () => {
 });
 
 /* ================= INIT ================= */
-
 loadVideo();
 load(true);
 loadMoreBtn.addEventListener("click", () => load());
 
 /* ================= BACK TO TOP ================= */
-
 const backToTop = document.getElementById("backToTop");
-
 window.addEventListener("scroll", () => {
-  if (window.scrollY > 400) {
-    backToTop.classList.add("visible");
-  } else {
-    backToTop.classList.remove("visible");
-  }
+  backToTop.classList.toggle("visible", window.scrollY > 400);
 });
-
-backToTop.addEventListener("click", () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
-});
-
+backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
