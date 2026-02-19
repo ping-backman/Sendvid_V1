@@ -1,7 +1,7 @@
 import { fetchVideos } from "/api.js";
 
 const PAGE_SIZE = 20;
-const UP_NEXT_COUNT = 5;
+const UP_NEXT_COUNT = 4;
 
 const params = new URLSearchParams(location.search);
 const id = params.get("id");
@@ -30,11 +30,10 @@ const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
 
 const resultsHintDesktop = document.getElementById("resultsHintDesktop");
-
 const searchDesktop = document.getElementById("q-desktop");
 const clearDesktop = document.getElementById("clearSearchDesktop");
 
-/* ================= VIDEO LOAD ================= */
+/* ================= VIDEO ================= */
 
 async function loadVideo() {
   const data = await fetchVideos({ id });
@@ -54,14 +53,14 @@ async function loadVideo() {
 
 function renderThumbnailPlayer(video) {
   playerWrapper.innerHTML = `
-      <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}">
-      <button class="play-btn">▶</button>
-      <iframe
-        class="video-frame"
-        allow="autoplay; fullscreen"
-        sandbox="allow-scripts allow-same-origin"
-        frameborder="0">
-      </iframe>
+    <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}">
+    <button class="play-btn">▶</button>
+    <iframe
+      class="video-frame"
+      allow="autoplay; fullscreen"
+      sandbox="allow-scripts allow-same-origin"
+      frameborder="0">
+    </iframe>
   `;
 
   const thumb = playerWrapper.querySelector(".video-thumb");
@@ -96,29 +95,37 @@ async function fetchBatch(limit) {
 
 /* ================= RENDER ================= */
 
+function createCard(v, side = false) {
+  const el = document.createElement("div");
+  el.className = `card ${side ? "side-card" : "fade-in"}`;
+  el.dataset.id = v.id;
+
+  if (watched.has(v.id) && !side) {
+    el.classList.add("watched");
+  }
+
+  el.innerHTML = `
+    <a href="bridge.html?id=${v.id}" class="card-link">
+      <img class="thumb"
+           src="${v.thumbnail}"
+           alt="${v.title}"
+           loading="lazy"
+           decoding="async">
+      <div class="card-body">
+        <div class="title">${v.title}</div>
+        <div class="meta">${v.duration} • ${v.views} views</div>
+      </div>
+    </a>
+  `;
+
+  return el;
+}
+
 function renderUpNext(videos) {
   upNextGrid.innerHTML = "";
 
   videos.slice(0, UP_NEXT_COUNT).forEach(v => {
-    const el = document.createElement("div");
-    el.className = "card side-card";
-    el.dataset.id = v.id;
-
-    el.innerHTML = `
-      <a href="bridge.html?id=${v.id}" class="card-link">
-        <img class="thumb"
-             src="${v.thumbnail}"
-             alt="${v.title}"
-             loading="lazy"
-             decoding="async">
-        <div class="card-body">
-          <div class="title">${v.title}</div>
-          <div class="meta">${v.duration} • ${v.views} views</div>
-        </div>
-      </a>
-    `;
-
-    upNextGrid.appendChild(el);
+    upNextGrid.appendChild(createCard(v, true));
   });
 }
 
@@ -126,27 +133,7 @@ function renderGrid(videos) {
   const fragment = document.createDocumentFragment();
 
   videos.forEach(v => {
-    const el = document.createElement("div");
-    el.className = "card fade-in";
-    el.dataset.id = v.id;
-
-    if (watched.has(v.id)) el.classList.add("watched");
-
-    el.innerHTML = `
-      <a href="bridge.html?id=${v.id}" class="card-link">
-        <img class="thumb"
-             src="${v.thumbnail}"
-             alt="${v.title}"
-             loading="lazy"
-             decoding="async">
-        <div class="card-body">
-          <div class="title">${v.title}</div>
-          <div class="meta">${v.duration} • ${v.views} views</div>
-        </div>
-      </a>
-    `;
-
-    fragment.appendChild(el);
+    fragment.appendChild(createCard(v, false));
   });
 
   grid.appendChild(fragment);
@@ -181,18 +168,22 @@ async function load(reset = false) {
   }
 }
 
-/* ================= SEARCH & FILTER ================= */
+/* ================= FILTERS ================= */
 
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     if (btn.dataset.sort === activeSort) return;
     activeSort = btn.dataset.sort;
+
     document.querySelectorAll(".filter-btn")
       .forEach(b => b.classList.remove("active"));
+
     btn.classList.add("active");
     load(true);
   });
 });
+
+/* ================= SEARCH ================= */
 
 let searchTimer;
 
@@ -217,5 +208,4 @@ clearDesktop.addEventListener("click", () => {
 
 loadVideo();
 load(true);
-
 loadMoreBtn.addEventListener("click", () => load());
