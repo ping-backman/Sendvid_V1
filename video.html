@@ -40,24 +40,44 @@
     <div class="main-column">
       <div class="video-section">
         <div id="playerWrapper" class="player-wrapper"></div>
+
         <h1 id="videoTitle"></h1>
         <div id="videoMeta" class="meta"></div>
+
+        <!-- Optional instruction / description -->
+        <div id="videoExtra" class="video-extra">
+          <!-- example: Please click play twice to start the video -->
+        </div>
       </div>
     </div>
 
-    <!-- RIGHT COLUMN -->
+    <!-- RIGHT COLUMN (UP NEXT ONLY) -->
     <div class="side-column">
-      <h2 class="section-title">Up Next</h2>
-      <div id="discoverGrid" class="grid side-grid"></div>
+      <h2 class="upnext-title">Up Next</h2>
 
-      <div id="loader" class="loader">
-        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <div id="upNextGrid" class="side-grid"></div>
+
+      <!-- native ad placement area -->
+      <div class="side-ad-slot">
+        <!-- Adsterra Native Ad Here -->
       </div>
-
-      <button id="loadMore" class="secondary load-more">Load More</button>
     </div>
 
   </div>
+
+  <!-- ===== DIVIDER BELOW VIDEO ===== -->
+  <div class="section-divider"></div>
+
+  <!-- ===== SUGGESTED GRID (ORIGINAL SIZE) ===== -->
+  <h2 class="suggested-title">Suggested</h2>
+
+  <div id="discoverGrid" class="grid"></div>
+
+  <div id="loader" class="loader">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  </div>
+
+  <button id="loadMore" class="secondary load-more">Load More</button>
 
 </div>
 
