@@ -54,22 +54,14 @@ async function loadVideo() {
 }
 
 function renderThumbnailPlayer(video) {
-  // Use the proxied link from your Apps Script
- function renderThumbnailPlayer(video) {
-  // 1. Log the object to your console so you can see exactly what fields exist
-  console.log("Video Object Data:", video);
+  // 1. Logic: Determine the correct Proxy Source
+  // We use the proxiedEmbed from API, but build it manually if Google is slow to update
+  const workerBase = "https://sendvid-proxy-tester.uilliam-maya.workers.dev/?url=";
+  const videoSrc = video.proxiedEmbed || (video.embed ? workerBase + encodeURIComponent(video.embed) : "");
 
-  // 2. Use a safer way to find the proxy URL
-  // We check for proxiedEmbed, and if it's missing, we build it manually on the fly
-  const workerBase = "https://sendvid-proxy-tester.uilliam-maya.workers.dev";
-  
-  const videoSrc = video.proxiedEmbed || 
-                   (video.embed ? workerBase + encodeURIComponent(video.embed) : "");
+  console.log("Initializing Player with Source:", videoSrc);
 
-  if (!videoSrc) {
-    console.error("Error: No embed URL found for this video!");
-  }
-
+  // 2. Inject HTML
   playerWrapper.innerHTML = `
     <div class="video-container" style="position: relative; width: 100%; padding-top: 56.25%; background: #000; overflow: hidden; border-radius: 8px;">
       <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; cursor: pointer;">
@@ -89,19 +81,8 @@ function renderThumbnailPlayer(video) {
   const playBtn = playerWrapper.querySelector(".play-btn");
 
   const playVideo = () => {
-    if (!videoSrc) return alert("Video source missing!");
-    frame.src = videoSrc;
-    frame.style.display = "block";
-    thumb.style.display = "none";
-    playBtn.style.display = "none";
-  };
-
-  thumb.addEventListener("click", playVideo);
-  playBtn.addEventListener("click", playVideo);
-}
-/*========================== */
-  const playVideo = () => {
-    // TRIGGER WORKER ONLY NOW (Saves daily requests)
+    if (!videoSrc) return console.error("No source found");
+    
     frame.src = videoSrc;
     frame.style.display = "block";
     thumb.style.display = "none";
@@ -118,7 +99,7 @@ function renderThumbnailPlayer(video) {
   playBtn.addEventListener("click", playVideo);
 }
 
-/* ================= FETCH & RENDER (UNCHANGED) ================= */
+/* ================= FETCH & RENDER ================= */
 async function fetchBatch(limit) {
   try {
     const data = await fetchVideos({
