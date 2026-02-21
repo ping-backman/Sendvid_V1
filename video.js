@@ -33,7 +33,7 @@ const resultsHintDesktop = document.getElementById("resultsHintDesktop");
 const searchDesktop = document.getElementById("q-desktop");
 const clearDesktop = document.getElementById("clearSearchDesktop");
 
-/* ================= VIDEO ================= */
+/* ================= VIDEO PLAYER (THUMBNAIL SWAP) ================= */
 async function loadVideo() {
   try {
     const data = await fetchVideos({ id });
@@ -54,15 +54,21 @@ async function loadVideo() {
 }
 
 function renderThumbnailPlayer(video) {
+  // Use the proxied link from your Apps Script
+  const videoSrc = video.proxiedEmbed || video.embed;
+
   playerWrapper.innerHTML = `
-    <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}">
-    <button class="play-btn">▶</button>
-    <iframe
-      class="video-frame"
-      allow="autoplay; fullscreen"
-      sandbox="allow-scripts allow-same-origin"
-      frameborder="0">
-    </iframe>
+    <div class="video-container" style="position: relative; width: 100%; padding-top: 56.25%; background: #000; overflow: hidden; border-radius: 8px;">
+      <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; cursor: pointer;">
+      <button class="play-btn" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 15px 30px; background: rgba(0,0,0,0.7); color: white; border: 2px solid white; border-radius: 50px; font-size: 24px; cursor: pointer; z-index: 2;">▶</button>
+      <iframe
+        class="video-frame"
+        src="about:blank"
+        allow="autoplay; fullscreen; picture-in-picture"
+        style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+        allowfullscreen>
+      </iframe>
+    </div>
   `;
 
   const thumb = playerWrapper.querySelector(".video-thumb");
@@ -70,17 +76,24 @@ function renderThumbnailPlayer(video) {
   const playBtn = playerWrapper.querySelector(".play-btn");
 
   const playVideo = () => {
-    frame.src = `${video.embed}${video.embed.includes("?") ? "&" : "?"}autoplay=1`;
+    // TRIGGER WORKER ONLY NOW (Saves daily requests)
+    frame.src = videoSrc;
     frame.style.display = "block";
     thumb.style.display = "none";
     playBtn.style.display = "none";
+
+    // Track viewed status
+    if (!watched.has(video.id)) {
+      watched.add(video.id);
+      localStorage.setItem("watched", JSON.stringify(Array.from(watched)));
+    }
   };
 
   thumb.addEventListener("click", playVideo);
   playBtn.addEventListener("click", playVideo);
 }
 
-/* ================= FETCH ================= */
+/* ================= FETCH & RENDER (UNCHANGED) ================= */
 async function fetchBatch(limit) {
   try {
     const data = await fetchVideos({
@@ -90,7 +103,6 @@ async function fetchBatch(limit) {
       q: currentQuery,
       discoverSeed
     });
-
     offset = data.nextOffset ?? null;
     return data.videos ?? [];
   } catch (err) {
@@ -99,36 +111,21 @@ async function fetchBatch(limit) {
   }
 }
 
-/* ================= RENDER ================= */
 function createCard(v, side = false) {
   const el = document.createElement("div");
   el.className = `card ${side ? "side-card" : "fade-in"}`;
   el.dataset.id = v.id;
-
   if (watched.has(v.id) && !side) el.classList.add("watched");
 
-  if (side) {
-    el.innerHTML = `
-      <a href="bridge.html?id=${v.id}" class="card-link side-card-link">
-        <img class="thumb" src="${v.thumbnail}" alt="${v.title}">
-        <div class="card-body">
-          <div class="title">${v.title}</div>
-          <div class="meta">${v.duration} • ${v.views} views</div>
-        </div>
-      </a>
-    `;
-  } else {
-    el.innerHTML = `
-      <a href="bridge.html?id=${v.id}" class="card-link">
-        <img class="thumb" src="${v.thumbnail}" alt="${v.title}" loading="lazy" decoding="async">
-        <div class="card-body">
-          <div class="title">${v.title}</div>
-          <div class="meta">${v.duration} • ${v.views} views</div>
-        </div>
-      </a>
-    `;
-  }
-
+  el.innerHTML = `
+    <a href="bridge.html?id=${v.id}" class="card-link ${side ? 'side-card-link' : ''}">
+      <img class="thumb" src="${v.thumbnail}" alt="${v.title}" loading="lazy">
+      <div class="card-body">
+        <div class="title">${v.title}</div>
+        <div class="meta">${v.duration} • ${v.views} views</div>
+      </div>
+    </a>
+  `;
   return el;
 }
 
@@ -141,19 +138,13 @@ function renderGrid(videos) {
   const fragment = document.createDocumentFragment();
   videos.forEach(v => fragment.appendChild(createCard(v, false)));
   grid.appendChild(fragment);
-  resultsHintDesktop.textContent = `Showing ${grid.children.length} videos`;
+  if (resultsHintDesktop) resultsHintDesktop.textContent = `Showing ${grid.children.length} videos`;
 }
 
-/* ================= LOAD ================= */
 async function load(reset = false) {
   if (loading) return;
   loading = true;
-
-  if (reset) {
-    grid.innerHTML = "";
-    offset = 0;
-  }
-
+  if (reset) { grid.innerHTML = ""; offset = 0; }
   loader.style.display = "block";
   loadMoreBtn.style.display = "none";
 
@@ -163,33 +154,32 @@ async function load(reset = false) {
 
   loader.style.display = "none";
   loading = false;
-  loadMoreBtn.style.display = batch.length === PAGE_SIZE ? "block" : "none";
+  loadMoreBtn.style.display = (batch.length === PAGE_SIZE) ? "block" : "none";
 }
 
-/* ================= FILTERS ================= */
+/* ================= FILTERS & SEARCH ================= */
 document.querySelectorAll(".filter-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     if (btn.dataset.sort === activeSort) return;
     activeSort = btn.dataset.sort;
-
     document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     load(true);
   });
 });
 
-/* ================= SEARCH ================= */
 let searchTimer;
-searchDesktop.addEventListener("input", e => {
-  clearDesktop.style.display = e.target.value ? "block" : "none";
+searchDesktop?.addEventListener("input", e => {
+  if (clearDesktop) clearDesktop.style.display = e.target.value ? "block" : "none";
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
     currentQuery = e.target.value.trim();
     load(true);
   }, 400);
 });
-clearDesktop.addEventListener("click", () => {
-  searchDesktop.value = "";
+
+clearDesktop?.addEventListener("click", () => {
+  if (searchDesktop) searchDesktop.value = "";
   clearDesktop.style.display = "none";
   currentQuery = "";
   load(true);
@@ -200,9 +190,8 @@ loadVideo();
 load(true);
 loadMoreBtn.addEventListener("click", () => load());
 
-/* ================= BACK TO TOP ================= */
 const backToTop = document.getElementById("backToTop");
 window.addEventListener("scroll", () => {
-  backToTop.classList.toggle("visible", window.scrollY > 400);
+  backToTop?.classList.toggle("visible", window.scrollY > 400);
 });
-backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+backToTop?.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
