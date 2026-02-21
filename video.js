@@ -55,7 +55,20 @@ async function loadVideo() {
 
 function renderThumbnailPlayer(video) {
   // Use the proxied link from your Apps Script
-  const videoSrc = video.proxiedEmbed;
+ function renderThumbnailPlayer(video) {
+  // 1. Log the object to your console so you can see exactly what fields exist
+  console.log("Video Object Data:", video);
+
+  // 2. Use a safer way to find the proxy URL
+  // We check for proxiedEmbed, and if it's missing, we build it manually on the fly
+  const workerBase = "https://sendvid-proxy-tester.uilliam-maya.workers.dev";
+  
+  const videoSrc = video.proxiedEmbed || 
+                   (video.embed ? workerBase + encodeURIComponent(video.embed) : "");
+
+  if (!videoSrc) {
+    console.error("Error: No embed URL found for this video!");
+  }
 
   playerWrapper.innerHTML = `
     <div class="video-container" style="position: relative; width: 100%; padding-top: 56.25%; background: #000; overflow: hidden; border-radius: 8px;">
@@ -75,6 +88,18 @@ function renderThumbnailPlayer(video) {
   const frame = playerWrapper.querySelector(".video-frame");
   const playBtn = playerWrapper.querySelector(".play-btn");
 
+  const playVideo = () => {
+    if (!videoSrc) return alert("Video source missing!");
+    frame.src = videoSrc;
+    frame.style.display = "block";
+    thumb.style.display = "none";
+    playBtn.style.display = "none";
+  };
+
+  thumb.addEventListener("click", playVideo);
+  playBtn.addEventListener("click", playVideo);
+}
+/*========================== */
   const playVideo = () => {
     // TRIGGER WORKER ONLY NOW (Saves daily requests)
     frame.src = videoSrc;
