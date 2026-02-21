@@ -55,7 +55,7 @@ async function loadVideo() {
 
 function renderThumbnailPlayer(video) {
   // Use the proxied link from your Apps Script
-  const videoSrc = video.proxiedEmbed || video.embed;
+  const videoSrc = video.proxiedEmbed;
 
   playerWrapper.innerHTML = `
     <div class="video-container" style="position: relative; width: 100%; padding-top: 56.25%; background: #000; overflow: hidden; border-radius: 8px;">
