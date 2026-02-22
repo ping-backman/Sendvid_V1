@@ -1,5 +1,5 @@
 const API_BASE =
-  "https://script.google.com/macros/s/AKfycbwCal_zKjLjgOqZWyTEMVRp1Pv68axT4f5s6ahuKUMGcpOdSmDP2oo0Q5Pydgq4NcR9/exec";
+  "https://api-cache.uilliam-maya.workers.dev";
 
 export async function fetchVideos(params = {}) {
   const url = new URL(API_BASE);
