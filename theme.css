@@ -228,7 +228,7 @@ button.secondary { background: var(--panel-soft); }
     display: flex !important;
     flex-direction: row !important;
     gap: 12px;
-    height: 94px; /* Fixed height for the row */
+    height: 110px; /* Fixed height for the row */
     padding: 0 !important;
     align-items: stretch; /* Makes children (img) full height */
   }
@@ -238,7 +238,7 @@ button.secondary { background: var(--panel-soft); }
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--border);
-    height: 94px; 
+    height: 110px; 
   }
 
   .side-card .thumb {
