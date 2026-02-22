@@ -341,9 +341,14 @@ button.secondary { background: var(--panel-soft); }
     top: 0;
     z-index: 1000;
     background: var(--bg); /* Solid background to hide scrolling content behind it */
-    padding: 12px 0;
+    /* These lines fix the padding/stickiness issue */
+    width: calc(100% + 40px); 
+    margin-left: -20px; 
+    padding: 12px 20px;
+    
     border-bottom: 1px solid var(--border);
     margin-bottom: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3); /* Optional: helps it stand out while scrolling */
   }
 
 }
