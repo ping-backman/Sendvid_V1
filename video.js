@@ -64,7 +64,7 @@ function renderThumbnailPlayer(video) {
   // 2. Inject HTML (Cleaned up, no inline styles)
   playerWrapper.innerHTML = `
     <div class="video-container" style="position: relative; width: 100%; height: 100%;">
-      <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; cursor: pointer; z-index: 2;">
+      <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; cursor: pointer; z-index: 2;">
       <button class="play-btn" style="z-index: 3;">▶</button>
       <iframe
         class="video-frame"
