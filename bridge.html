@@ -1,21 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Please wait…</title>
-  <link rel="stylesheet" href="/theme.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preparing your video...</title>
+    <link rel="stylesheet" href="/theme.css">
+    <style>
+        .bridge-content { max-width: 400px; margin: 60px auto; text-align: center; padding: 20px; }
+        .preview-card { background: #1a1a1a; border-radius: 12px; overflow: hidden; margin: 25px 0; border: 1px solid #333; }
+        .preview-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; opacity: 0.6; }
+        .preview-info { padding: 15px; text-align: left; }
+        .timer-text { font-size: 1.2rem; font-weight: bold; color: var(--primary-color, #ff0055); margin-bottom: 10px; }
+        
+        #watchBtn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: not-allowed;
+            background: #333;
+            color: #777;
+            transition: all 0.3s ease;
+        }
+        #watchBtn.active {
+            background: var(--primary-color, #ff0055);
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 0, 85, 0.3);
+        }
+    </style>
 </head>
 <body>
-  <div class="container" style="text-align:center; padding-top:80px">
-    <h2>Loading video…</h2>
-    <p class="meta">Please wait a moment</p>
 
-    <!-- Adsterra CPM code goes here -->
-    <div style="margin:30px auto">
-      <!-- AD SCRIPT -->
+    <div class="bridge-content">
+        <p class="timer-text" id="statusText">Your video is loading in <span id="timer">6</span>s...</p>
+        
+        <div class="preview-card" id="previewCard" style="display: none;">
+            <img id="prevThumb" src="" class="preview-thumb">
+            <div class="preview-info">
+                <div class="title" id="prevTitle" style="font-size: 1rem; margin-bottom: 5px;">Loading...</div>
+                <div class="meta" id="prevMeta" style="font-size: 0.8rem;">-- views</div>
+            </div>
+        </div>
+
+        <button id="watchBtn">Please Wait...</button>
+
+        <div id="ad-container" style="margin-top: 20px;">
+            </div>
     </div>
-  </div>
 
-  <script src="/bridge.js"></script>
+    <script type="module" src="/bridge.js"></script>
 </body>
 </html>
