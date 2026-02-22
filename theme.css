@@ -336,21 +336,14 @@ button.secondary { background: var(--panel-soft); }
 /* ========================================= */
 
 @media (max-width: 900px) {
-
   .video-header {
     position: sticky;
     top: 0;
     z-index: 1000;
-    background: var(--bg);
+    background: var(--bg); /* Solid background to hide scrolling content behind it */
     padding: 12px 0;
-  }
-
-  .video-header::after {
-    content: "";
-    display: block;
-    height: 1px;
-    background: var(--border);
-    margin-top: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 15px;
   }
 
 }
