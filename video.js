@@ -63,18 +63,18 @@ function renderThumbnailPlayer(video) {
 
   // 2. Inject HTML (Cleaned up, no inline styles)
   playerWrapper.innerHTML = `
-  <div class="video-container" style="position: relative; width: 100%; height: 100%;">
-    <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; cursor: pointer; z-index: 2;">
-    <button class="play-btn" style="z-index: 3;">▶</button>
-    <iframe
-      class="video-frame"
-      src="about:blank"
-      allow="autoplay; fullscreen; picture-in-picture"
-      style="display: none; position: absolute; inset: 0; width: 100%; height: 100%; border: none; z-index: 1;"
-      allowfullscreen>
-    </iframe>
-  </div>
-`;
+    <div class="video-container" style="position: relative; width: 100%; height: 100%;">
+      <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; cursor: pointer; z-index: 2;">
+      <button class="play-btn" style="z-index: 3;">▶</button>
+      <iframe
+        class="video-frame"
+        src="about:blank"
+        allow="autoplay; fullscreen; picture-in-picture"
+        style="display: none; position: absolute; inset: 0; width: 100%; height: 100%; border: none; z-index: 1;"
+        allowfullscreen>
+      </iframe>
+    </div>
+  `;
 
   const thumb = playerWrapper.querySelector(".video-thumb");
   const frame = playerWrapper.querySelector(".video-frame");
