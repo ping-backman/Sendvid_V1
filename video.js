@@ -61,20 +61,20 @@ function renderThumbnailPlayer(video) {
 
   console.log("Initializing Player with Source:", videoSrc);
 
-  // 2. Inject HTML
+  // 2. Inject HTML (Cleaned up, no inline styles)
   playerWrapper.innerHTML = `
-    <div class="video-container" style="position: relative; width: 100%; padding-top: 56.25%; background: #000; overflow: hidden; border-radius: 8px;">
-      <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; cursor: pointer;">
-      <button class="play-btn" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 15px 30px; background: rgba(0,0,0,0.7); color: white; border: 2px solid white; border-radius: 50px; font-size: 24px; cursor: pointer; z-index: 2;">▶</button>
-      <iframe
-        class="video-frame"
-        src="about:blank"
-        allow="autoplay; fullscreen; picture-in-picture"
-        style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
-        allowfullscreen>
-      </iframe>
-    </div>
-  `;
+  <div class="video-container" style="position: relative; width: 100%; height: 100%;">
+    <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; cursor: pointer; z-index: 2;">
+    <button class="play-btn" style="z-index: 3;">▶</button>
+    <iframe
+      class="video-frame"
+      src="about:blank"
+      allow="autoplay; fullscreen; picture-in-picture"
+      style="display: none; position: absolute; inset: 0; width: 100%; height: 100%; border: none; z-index: 1;"
+      allowfullscreen>
+    </iframe>
+  </div>
+`;
 
   const thumb = playerWrapper.querySelector(".video-thumb");
   const frame = playerWrapper.querySelector(".video-frame");
