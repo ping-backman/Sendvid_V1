@@ -81,7 +81,7 @@ function render(videos) {
   gallery.appendChild(fragment);
 }
 
-/* ---------- Load (Original Working Logic) ---------- */
+/* ---------- Load (Updated to handle GAS -1 signal) ---------- */
 async function load(reset = false) {
   if (loading) return;
   loading = true;
@@ -106,7 +106,14 @@ async function load(reset = false) {
     });
 
     render(data.videos || []);
-    offset = data.nextOffset ?? null;
+
+    // Reconciled Logic:
+    // If nextOffset is -1, or we get an empty/short batch, stop pagination.
+    if (data.nextOffset === -1 || !data.videos || data.videos.length < PAGE_SIZE) {
+      offset = null; 
+    } else {
+      offset = data.nextOffset; 
+    }
   } catch (err) {
     console.error("Fetch failed", err);
   }
@@ -114,6 +121,8 @@ async function load(reset = false) {
   loader.style.display = "none";
   loading = false;
   if (!gallery.children.length && emptyState) emptyState.style.display = "block";
+  
+  // Only show button if there is a valid next page
   if (offset !== null) loadMoreBtn.style.display = "block";
 }
 
@@ -138,5 +147,23 @@ searchDesktop?.addEventListener("input", (e) => handleSearch(e.target.value));
 searchMobile?.addEventListener("input", (e) => handleSearch(e.target.value));
 
 loadMoreBtn.onclick = () => load();
+
+/* ---------- Back to Top Logic (Restored) ---------- */
+if (backToTop) {
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 400) {
+      backToTop.classList.add("visible");
+      backToTop.style.display = "block";
+    } else {
+      backToTop.classList.remove("visible");
+      backToTop.style.display = "none";
+    }
+  });
+
+  backToTop.onclick = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+}
+
 syncFromURL();
 load(true);
