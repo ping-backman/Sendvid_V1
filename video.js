@@ -5,7 +5,7 @@ const encodedId = params.get("id");
 const videoId = encodedId ? atob(encodedId) : null;
 
 let suggestedOffset = 0;
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 20;
 
 async function loadSuggested(reset = false) {
     if (reset) { suggestedOffset = 0; document.getElementById("discoverGrid").innerHTML = ""; }
