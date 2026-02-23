@@ -2,12 +2,13 @@ import { fetchVideos } from "./api.js";
 
 const PAGE_SIZE = 20;
 
-// Reverting to your original stable seed logic
-const discoverSeed = sessionStorage.getItem("discoverSeed") ||
-  (() => {
-    const s = Math.random().toString(36).slice(2);
-    sessionStorage.setItem("discoverSeed", s);
-    return s;
+onst CURRENT_SEED = (() => {
+    let seed = sessionStorage.getItem('discover_seed');
+    if (!seed) {
+        seed = Math.random().toString(36).substring(2, 8);
+        sessionStorage.setItem('discover_seed', seed);
+    }
+    return seed;
   })();
 
 let offset = 0;
