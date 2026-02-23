@@ -48,7 +48,7 @@ async function load(reset = false) {
             el.className = "card fade-in";
             // Use encodeID to hide the raw Sendvid ID
             el.innerHTML = `
-                <a href="bridge.html?id=${encodeID(v.id)}" class="card-link">
+                <a href="/w/${encodeID(v.id)}" class="card-link">
                     <img class="thumb" src="${v.thumbnail}" loading="lazy">
                     <div class="card-body">
                         <div class="title">${v.title}</div>
