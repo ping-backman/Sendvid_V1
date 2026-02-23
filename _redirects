@@ -1,0 +1,2 @@
+/v/:id  /video.html?id=:id  200
+/w/:id  /bridge.html?id=:id  200
