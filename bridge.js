@@ -1,54 +1,53 @@
 import { fetchVideos } from "/api.js";
 
 const params = new URLSearchParams(location.search);
-const id = params.get("id");
-const timerEl = document.getElementById("timer");
-const watchBtn = document.getElementById("watchBtn");
-const statusText = document.getElementById("statusText");
+const videoId = params.get("id");
 
-let timeLeft = 6;
+let timeLeft = 6; // Matches the 6s in your HTML
+const timerEl = document.getElementById("timer");
+const statusTextEl = document.getElementById("statusText");
+const watchBtn = document.getElementById("watchBtn");
+const previewCard = document.getElementById("previewCard");
 
 async function initBridge() {
-    if (!id) {
-        location.href = "index.html";
+    if (!videoId) {
+        statusTextEl.textContent = "Error: No video ID provided.";
         return;
     }
 
-    // 1. Fetch video data to show the preview
+    // 1. Fetch preview metadata
     try {
-        const data = await fetchVideos({ id });
+        const data = await fetchVideos({ id: videoId });
         if (data?.video) {
-            const v = data.video;
-            document.getElementById("prevThumb").src = v.thumbnail;
-            document.getElementById("prevTitle").textContent = v.title;
-            document.getElementById("prevMeta").textContent = `${v.duration} • ${v.views} views`;
-            document.getElementById("previewCard").style.display = "block";
+            document.getElementById("prevThumb").src = data.video.thumbnail;
+            document.getElementById("prevTitle").textContent = data.video.title;
+            document.getElementById("prevMeta").textContent = `${data.video.duration} • ${data.video.views} views`;
+            previewCard.style.display = "block";
         }
     } catch (e) {
-        console.error("Preview load failed", e);
+        console.error("Failed to load preview data", e);
     }
 
-    // 2. Start Countdown
+    // 2. Handle Countdown
     const countdown = setInterval(() => {
         timeLeft--;
-        timerEl.textContent = timeLeft;
-
-        if (timeLeft <= 0) {
+        if (timeLeft > 0) {
+            timerEl.textContent = timeLeft;
+        } else {
             clearInterval(countdown);
-            enableButton();
+            statusTextEl.textContent = "Your video is ready!";
+            
+            // Enable Watch Button
+            watchBtn.textContent = "Watch Video Now";
+            watchBtn.classList.add("active");
+            watchBtn.disabled = false;
+            
+            // Redirect to the actual video page when clicked
+            watchBtn.onclick = () => {
+                window.location.href = `/v/${videoId}`;
+            };
         }
     }, 1000);
-}
-
-function enableButton() {
-    statusText.innerHTML = "Your video is ready!";
-    watchBtn.textContent = "WATCH VIDEO NOW";
-    watchBtn.classList.add("active");
-    
-    watchBtn.onclick = () => {
-        // This click will trigger the Adsterra Pop-under automatically
-        location.href = `video.html?id=${id}`;
-    };
 }
 
 initBridge();
