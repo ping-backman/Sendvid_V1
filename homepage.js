@@ -2,6 +2,7 @@ import { fetchVideos } from "./api.js";
 
 const PAGE_SIZE = 20;
 
+// 1. Unified Seed Logic (Key: 'discoverSeed')
 const CURRENT_SEED = (() => {
     let seed = sessionStorage.getItem('discoverSeed');
     if (!seed) {
@@ -89,7 +90,7 @@ async function load(reset = false) {
 
   if (reset) {
     gallery.innerHTML = "";
-    offset = 0;
+    offset = 0; // Reset offset to start from beginning
   }
 
   loader.style.display = "block";
@@ -99,7 +100,7 @@ async function load(reset = false) {
   try {
     const data = await fetchVideos({
       limit: PAGE_SIZE,
-      offset,
+      offset: offset, // Use the current offset variable
       sort: activeSort,
       length: activeLength,
       q: currentQuery,
@@ -108,12 +109,12 @@ async function load(reset = false) {
 
     render(data.videos || []);
 
-    // Reconciled Logic:
-    // If nextOffset is -1, or we get an empty/short batch, stop pagination.
+    // 2. Pagination Logic: 
+    // If the API says -1, we stop. Otherwise, update the offset for the NEXT call.
     if (data.nextOffset === -1 || !data.videos || data.videos.length < PAGE_SIZE) {
       offset = null; 
     } else {
-      offset = data.nextOffset; 
+      offset = data.nextOffset; // This MUST be updated to 20, 40, etc.
     }
   } catch (err) {
     console.error("Fetch failed", err);
@@ -122,8 +123,6 @@ async function load(reset = false) {
   loader.style.display = "none";
   loading = false;
   if (!gallery.children.length && emptyState) emptyState.style.display = "block";
-  
-  // Only show button if there is a valid next page
   if (offset !== null) loadMoreBtn.style.display = "block";
 }
 
