@@ -4,10 +4,10 @@ import { fetchVideos } from "/api.js";
  * Ensures "Discover" randomization stays consistent during the session.
  */
 const CURRENT_SEED = (() => {
-    let seed = sessionStorage.getItem('discover_seed');
+    let seed = sessionStorage.getItem('discoverSeed');
     if (!seed) {
         seed = Math.random().toString(36).substring(2, 8);
-        sessionStorage.setItem('discover_seed', seed);
+        sessionStorage.setItem('discoverSeed', seed);
     }
     return seed;
 })();
@@ -103,11 +103,19 @@ async function fetchBatch(limit) {
             offset,
             sort: activeSort,
             q: currentQuery,
-            discoverSeed: CURRENT_SEED
+            discoverSeed: CURRENT_SEED // Standardized name
         });
-        offset = data.nextOffset ?? null;
+
+        // RECONCILED LOGIC: Handle the -1 signal
+        if (data.nextOffset === -1 || !data.videos || data.videos.length < limit) {
+            offset = null; 
+        } else {
+            offset = data.nextOffset;
+        }
+
         return data.videos ?? [];
     } catch (err) {
+        console.error("Batch fetch failed", err);
         return [];
     }
 }
