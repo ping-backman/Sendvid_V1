@@ -2,14 +2,14 @@ import { fetchVideos } from "./api.js";
 
 const PAGE_SIZE = 20;
 
-onst CURRENT_SEED = (() => {
-    let seed = sessionStorage.getItem('discover_seed');
+const CURRENT_SEED = (() => {
+    let seed = sessionStorage.getItem('discoverSeed');
     if (!seed) {
         seed = Math.random().toString(36).substring(2, 8);
-        sessionStorage.setItem('discover_seed', seed);
+        sessionStorage.setItem('discoverSeed', seed);
     }
     return seed;
-  })();
+})();
 
 let offset = 0;
 let activeSort = "relevance";
