@@ -1,9 +1,8 @@
 import { fetchVideos } from "/api.js";
 
 const params = new URLSearchParams(location.search);
-const encodedId = params.get("id");
-// Decode the pro URL back to the real ID
-const id = encodedId ? atob(encodedId) : null;
+const id = params.get("id");
+let timeLeft = 6;
 
 async function initBridge() {
     if (!id) { location.href = "index.html"; return; }
@@ -13,12 +12,20 @@ async function initBridge() {
         const v = data.video;
         document.getElementById("prevThumb").src = v.thumbnail;
         document.getElementById("prevTitle").textContent = v.title;
-        // ... (rest of your bridge timer logic)
-        
-        // When timer ends, send to video page with same encoded ID
-        document.getElementById("watchBtn").onclick = () => {
-            location.href = `video.html?id=${encodedId}`;
-        };
+        document.getElementById("prevMeta").textContent = `${v.duration} • ${v.views} views`;
+        document.getElementById("previewCard").style.display = "block";
     }
+
+    const timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            const btn = document.getElementById("watchBtn");
+            btn.textContent = "WATCH VIDEO NOW";
+            btn.classList.add("active");
+            btn.onclick = () => { location.href = `video.html?id=${id}`; };
+        }
+    }, 1000);
 }
 initBridge();
