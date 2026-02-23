@@ -25,7 +25,7 @@ async function loadSuggested(reset = false) {
         const el = document.createElement("div");
         el.className = "card fade-in";
         el.innerHTML = `
-            <a href="bridge.html?id=${btoa(v.id)}" class="card-link">
+            <a href="/w/${btoa(v.id)}" class="card-link">
                 <img class="thumb" src="${v.thumbnail}">
                 <div class="card-body">
                     <div class="title">${v.title}</div>
