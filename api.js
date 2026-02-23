@@ -3,8 +3,18 @@ const API_BASE = "https://api-cache.uilliam-maya.workers.dev";
 export async function fetchVideos(params = {}) {
     const url = new URL(API_BASE);
     
-    Object.entries(params).forEach(([k, v]) => {
-        // We check for null/undefined but allow 0 (for offset)
+    // Explicitly mapping for GAS compatibility
+    const mapping = {
+        discoverSeed: params.discoverSeed || params.discover_seed,
+        limit: params.limit,
+        offset: params.offset,
+        sort: params.sort,
+        q: params.q,
+        id: params.id,
+        length: params.length
+    };
+
+    Object.entries(mapping).forEach(([k, v]) => {
         if (v !== undefined && v !== null && v !== "") {
             url.searchParams.set(k, v);
         }
