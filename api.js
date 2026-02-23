@@ -5,7 +5,7 @@ export async function fetchVideos(params = {}) {
     
     // Explicitly mapping for GAS compatibility
     const mapping = {
-        discoverSeed: params.discoverSeed || params.discover_seed,
+        discoverSeed: params.discoverSeed,
         limit: params.limit,
         offset: params.offset,
         sort: params.sort,
