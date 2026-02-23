@@ -1,48 +1,58 @@
 import { fetchVideos } from "/api.js";
 
+/** * Hybrid ID Detection
+ * 1. Checks URL query params (?id=...)
+ * 2. If empty, checks the URL path (/w/ID)
+ */
 const params = new URLSearchParams(location.search);
-const videoId = params.get("id");
+const videoId = params.get("id") || window.location.pathname.split('/').filter(Boolean).pop();
 
-let timeLeft = 6; // Matches the 6s in your HTML
+let timeLeft = 6;
 const timerEl = document.getElementById("timer");
 const statusTextEl = document.getElementById("statusText");
 const watchBtn = document.getElementById("watchBtn");
 const previewCard = document.getElementById("previewCard");
 
 async function initBridge() {
-    if (!videoId) {
-        statusTextEl.textContent = "Error: No video ID provided.";
+    // Check if ID is "w" or empty (happens if path is just /w/)
+    if (!videoId || videoId === 'w') {
+        statusTextEl.textContent = "Error: No video ID detected.";
+        console.error("Pathname: ", window.location.pathname);
         return;
     }
 
-    // 1. Fetch preview metadata
+    // 1. Fetch Metadata for the Preview Card
     try {
         const data = await fetchVideos({ id: videoId });
         if (data?.video) {
-            document.getElementById("prevThumb").src = data.video.thumbnail;
-            document.getElementById("prevTitle").textContent = data.video.title;
-            document.getElementById("prevMeta").textContent = `${data.video.duration} • ${data.video.views} views`;
+            const v = data.video;
+            document.getElementById("prevThumb").src = v.thumbnail;
+            document.getElementById("prevTitle").textContent = v.title;
+            document.getElementById("prevMeta").textContent = `${v.duration} • ${v.views} views`;
             previewCard.style.display = "block";
+        } else {
+            statusTextEl.textContent = "Video not found.";
         }
     } catch (e) {
-        console.error("Failed to load preview data", e);
+        console.error("Metadata fetch failed", e);
     }
 
-    // 2. Handle Countdown
+    // 2. Countdown Logic
     const countdown = setInterval(() => {
         timeLeft--;
         if (timeLeft > 0) {
             timerEl.textContent = timeLeft;
         } else {
             clearInterval(countdown);
-            statusTextEl.textContent = "Your video is ready!";
+            statusTextEl.innerHTML = "Ready to watch!";
             
-            // Enable Watch Button
-            watchBtn.textContent = "Watch Video Now";
+            // Enable and stylize Watch Button
+            watchBtn.textContent = "Continue to Video";
             watchBtn.classList.add("active");
             watchBtn.disabled = false;
+            watchBtn.style.cursor = "pointer";
             
-            // Redirect to the actual video page when clicked
+            // Final Redirect to the Clean Video URL
             watchBtn.onclick = () => {
                 window.location.href = `/v/${videoId}`;
             };
