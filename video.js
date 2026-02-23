@@ -3,6 +3,7 @@ import { fetchVideos } from "/api.js";
 /** * Persistent Seed Logic
  * Ensures "Discover" randomization stays consistent during the session.
  */
+// 1. Unified Seed Logic (Key: 'discoverSeed')
 const CURRENT_SEED = (() => {
     let seed = sessionStorage.getItem('discoverSeed');
     if (!seed) {
@@ -100,17 +101,17 @@ async function fetchBatch(limit) {
     try {
         const data = await fetchVideos({
             limit,
-            offset,
+            offset: offset, // MUST use the current offset
             sort: activeSort,
             q: currentQuery,
-            discoverSeed: CURRENT_SEED // Standardized name
+            discoverSeed: CURRENT_SEED
         });
 
-        // RECONCILED LOGIC: Handle the -1 signal
+        // 2. Pagination Logic
         if (data.nextOffset === -1 || !data.videos || data.videos.length < limit) {
             offset = null; 
         } else {
-            offset = data.nextOffset;
+            offset = data.nextOffset; 
         }
 
         return data.videos ?? [];
