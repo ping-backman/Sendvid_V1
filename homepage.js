@@ -103,7 +103,7 @@ async function load(reset = false) {
       sort: activeSort,
       length: activeLength,
       q: currentQuery,
-      discoverSeed: activeSort === "discover" ? discoverSeed : undefined
+      discoverSeed: activeSort === "discover" ? CURRENT_SEED : undefined
     });
 
     render(data.videos || []);
