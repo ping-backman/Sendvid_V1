@@ -15,8 +15,11 @@ const CURRENT_SEED = (() => {
 const PAGE_SIZE = 20;
 const UP_NEXT_COUNT = 4;
 
+/** * Hybrid ID Detection
+ * Picks up the ID from ?id= OR from the clean URL path /v/ID
+ */
 const params = new URLSearchParams(location.search);
-const id = params.get("id") || window.location.pathname.split('/').filter(Boolean).pop();
+const videoId = params.get("id") || window.location.pathname.split('/').filter(Boolean).pop();
 
 let offset = 0;
 let activeSort = "discover";
@@ -33,46 +36,41 @@ const upNextGrid = document.getElementById("upNextGrid");
 const grid = document.getElementById("discoverGrid");
 const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
-const resultsHintDesktop = document.getElementById("resultsHintDesktop");
 const searchDesktop = document.getElementById("q-desktop");
 const clearDesktop = document.getElementById("clearSearchDesktop");
+const resultsHintDesktop = document.getElementById("resultsHintDesktop");
 
 /* ================= VIDEO PLAYER ================= */
 async function loadVideo() {
+    if (!videoId || videoId === 'v') {
+        videoTitle.textContent = "No Video ID provided";
+        return;
+    }
     try {
-        const data = await fetchVideos({ id });
+        const data = await fetchVideos({ id: videoId });
         if (!data?.video) {
             videoTitle.textContent = "Video not found";
             return;
         }
-
         const v = data.video;
         videoTitle.textContent = v.title;
         videoMeta.textContent = `${v.duration} • ${v.views} views`;
-
         renderThumbnailPlayer(v);
     } catch (err) {
-        console.error("Player Load Error:", err);
+        console.error("Load Error:", err);
         videoTitle.textContent = "Error loading video";
     }
 }
 
 function renderThumbnailPlayer(video) {
-    // Falls back to manual construction if proxiedEmbed isn't in the object
     const workerBase = "https://sendvid-proxy-tester.uilliam-maya.workers.dev/?url=";
-    const videoSrc = video.proxiedEmbed || (video.embed ? workerBase + encodeURIComponent(video.embed) : "");
+    const videoSrc = video.proxiedEmbed || (video.id ? workerBase + encodeURIComponent(`https://sendvid.com/embed/${video.id}`) : "");
 
     playerWrapper.innerHTML = `
         <div class="video-container" style="position: relative; width: 100%; height: 100%;">
             <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; cursor: pointer; z-index: 2;">
             <button class="play-btn" style="z-index: 3;">▶</button>
-            <iframe
-                class="video-frame"
-                src="about:blank"
-                allow="autoplay; fullscreen; picture-in-picture"
-                style="display: none; position: absolute; inset: 0; width: 100%; height: 100%; border: none; z-index: 1;"
-                allowfullscreen>
-            </iframe>
+            <iframe class="video-frame" src="about:blank" allow="autoplay; fullscreen" style="display: none; position: absolute; inset: 0; width: 100%; height: 100%; border: none; z-index: 1;" allowfullscreen></iframe>
         </div>
     `;
 
@@ -81,20 +79,20 @@ function renderThumbnailPlayer(video) {
     const playBtn = playerWrapper.querySelector(".play-btn");
 
     const playVideo = () => {
-        if (!videoSrc) return console.error("No source found");
         frame.src = videoSrc;
         frame.style.display = "block";
         thumb.style.display = "none";
         playBtn.style.display = "none";
-
+        
+        // Add to watched on play
         if (!watched.has(video.id)) {
             watched.add(video.id);
-            localStorage.setItem("watched", JSON.stringify(Array.from(watched)));
+            localStorage.setItem("watched", JSON.stringify([...watched]));
         }
     };
 
-    thumb.addEventListener("click", playVideo);
-    playBtn.addEventListener("click", playVideo);
+    thumb.onclick = playVideo;
+    playBtn.onclick = playVideo;
 }
 
 /* ================= FETCH & RENDER ================= */
@@ -105,12 +103,11 @@ async function fetchBatch(limit) {
             offset,
             sort: activeSort,
             q: currentQuery,
-            discoverSeed: CURRENT_SEED // Synchronized seed
+            discoverSeed: CURRENT_SEED
         });
         offset = data.nextOffset ?? null;
         return data.videos ?? [];
     } catch (err) {
-        console.error("Batch Fetch Error:", err);
         return [];
     }
 }
@@ -119,9 +116,8 @@ function createCard(v, side = false) {
     const el = document.createElement("div");
     el.className = `card ${side ? "side-card" : "fade-in"}`;
     el.dataset.id = v.id;
-    if (watched.has(v.id) && !side) el.classList.add("watched");
+    if (watched.has(v.id)) el.classList.add("watched");
 
-    // Clean URL used: /w/ instead of bridge.html?id=
     el.innerHTML = `
         <a href="/w/${v.id}" class="card-link ${side ? 'side-card-link' : ''}">
             <img class="thumb" src="${v.thumbnail}" alt="${v.title}" loading="lazy">
@@ -134,45 +130,64 @@ function createCard(v, side = false) {
     return el;
 }
 
-function renderUpNext(videos) {
-    upNextGrid.innerHTML = "";
-    videos.slice(0, UP_NEXT_COUNT).forEach(v => upNextGrid.appendChild(createCard(v, true)));
-}
+/* ================= TOUCH DRAG FIX & WATCHED SYNC ================= */
+let touchStartX = 0, touchStartY = 0, isDragging = false;
+[upNextGrid, grid].forEach(container => {
+    if(!container) return;
+    container.addEventListener("touchstart", e => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isDragging = false;
+    }, { passive: true });
 
-function renderGrid(videos) {
-    const fragment = document.createDocumentFragment();
-    videos.forEach(v => fragment.appendChild(createCard(v, false)));
-    grid.appendChild(fragment);
-    if (resultsHintDesktop) resultsHintDesktop.textContent = `Showing ${grid.children.length} videos`;
-}
+    container.addEventListener("touchmove", e => {
+        if (Math.abs(e.touches[0].clientX - touchStartX) > 10 || Math.abs(e.touches[0].clientY - touchStartY) > 10) 
+            isDragging = true;
+    }, { passive: true });
+
+    container.addEventListener("click", e => {
+        const link = e.target.closest(".card-link");
+        if (!link || isDragging) return;
+        const card = link.closest(".card");
+        const id = card.dataset.id;
+        watched.add(id);
+        localStorage.setItem("watched", JSON.stringify([...watched]));
+        card.classList.add("watched");
+    });
+});
 
 async function load(reset = false) {
     if (loading) return;
     loading = true;
     if (reset) { grid.innerHTML = ""; offset = 0; }
-    
     loader.style.display = "block";
     loadMoreBtn.style.display = "none";
 
     const batch = await fetchBatch(PAGE_SIZE);
+    if (reset) {
+        upNextGrid.innerHTML = "";
+        batch.slice(0, UP_NEXT_COUNT).forEach(v => upNextGrid.appendChild(createCard(v, true)));
+    }
     
-    if (reset) renderUpNext(batch);
-    renderGrid(batch);
+    const fragment = document.createDocumentFragment();
+    batch.forEach(v => fragment.appendChild(createCard(v, false)));
+    grid.appendChild(fragment);
 
+    if (resultsHintDesktop) resultsHintDesktop.textContent = `Showing ${grid.children.length} suggested`;
     loader.style.display = "none";
     loading = false;
-    loadMoreBtn.style.display = (batch.length === PAGE_SIZE) ? "block" : "none";
+    loadMoreBtn.style.display = (offset !== null) ? "block" : "none";
 }
 
 /* ================= FILTERS & SEARCH ================= */
 document.querySelectorAll(".filter-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.onclick = () => {
         if (btn.dataset.sort === activeSort) return;
         activeSort = btn.dataset.sort;
         document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         load(true);
-    });
+    };
 });
 
 let searchTimer;
@@ -186,7 +201,7 @@ searchDesktop?.addEventListener("input", e => {
 });
 
 clearDesktop?.addEventListener("click", () => {
-    if (searchDesktop) searchDesktop.value = "";
+    searchDesktop.value = "";
     clearDesktop.style.display = "none";
     currentQuery = "";
     load(true);
@@ -197,9 +212,6 @@ loadVideo();
 load(true);
 loadMoreBtn.onclick = () => load();
 
-// Back to top logic
 const backToTop = document.getElementById("backToTop");
-window.addEventListener("scroll", () => {
-    backToTop?.classList.toggle("visible", window.scrollY > 400);
-});
-backToTop?.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+window.onscroll = () => backToTop?.classList.toggle("visible", window.scrollY > 400);
+backToTop.onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
