@@ -1,54 +1,24 @@
 import { fetchVideos } from "/api.js";
 
 const params = new URLSearchParams(location.search);
-const id = params.get("id");
-const timerEl = document.getElementById("timer");
-const watchBtn = document.getElementById("watchBtn");
-const statusText = document.getElementById("statusText");
-
-let timeLeft = 6;
+const encodedId = params.get("id");
+// Decode the pro URL back to the real ID
+const id = encodedId ? atob(encodedId) : null;
 
 async function initBridge() {
-    if (!id) {
-        location.href = "index.html";
-        return;
+    if (!id) { location.href = "index.html"; return; }
+
+    const data = await fetchVideos({ id });
+    if (data?.video) {
+        const v = data.video;
+        document.getElementById("prevThumb").src = v.thumbnail;
+        document.getElementById("prevTitle").textContent = v.title;
+        // ... (rest of your bridge timer logic)
+        
+        // When timer ends, send to video page with same encoded ID
+        document.getElementById("watchBtn").onclick = () => {
+            location.href = `video.html?id=${encodedId}`;
+        };
     }
-
-    // 1. Fetch video data to show the preview
-    try {
-        const data = await fetchVideos({ id });
-        if (data?.video) {
-            const v = data.video;
-            document.getElementById("prevThumb").src = v.thumbnail;
-            document.getElementById("prevTitle").textContent = v.title;
-            document.getElementById("prevMeta").textContent = `${v.duration} • ${v.views} views`;
-            document.getElementById("previewCard").style.display = "block";
-        }
-    } catch (e) {
-        console.error("Preview load failed", e);
-    }
-
-    // 2. Start Countdown
-    const countdown = setInterval(() => {
-        timeLeft--;
-        timerEl.textContent = timeLeft;
-
-        if (timeLeft <= 0) {
-            clearInterval(countdown);
-            enableButton();
-        }
-    }, 1000);
 }
-
-function enableButton() {
-    statusText.innerHTML = "Your video is ready!";
-    watchBtn.textContent = "WATCH VIDEO NOW";
-    watchBtn.classList.add("active");
-    
-    watchBtn.onclick = () => {
-        // This click will trigger the Adsterra Pop-under automatically
-        location.href = `video.html?id=${id}`;
-    };
-}
-
 initBridge();
