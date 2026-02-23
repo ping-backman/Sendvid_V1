@@ -16,7 +16,7 @@ const PAGE_SIZE = 20;
 const UP_NEXT_COUNT = 4;
 
 const params = new URLSearchParams(location.search);
-const id = params.get("id");
+const id = params.get("id") || window.location.pathname.split('/').filter(Boolean).pop();
 
 let offset = 0;
 let activeSort = "discover";
