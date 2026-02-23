@@ -1,64 +1,205 @@
 import { fetchVideos } from "/api.js";
 
+/** * Persistent Seed Logic
+ * Ensures "Discover" randomization stays consistent during the session.
+ */
+const CURRENT_SEED = (() => {
+    let seed = sessionStorage.getItem('discover_seed');
+    if (!seed) {
+        seed = Math.random().toString(36).substring(2, 8);
+        sessionStorage.setItem('discover_seed', seed);
+    }
+    return seed;
+})();
+
+const PAGE_SIZE = 20;
+const UP_NEXT_COUNT = 4;
+
 const params = new URLSearchParams(location.search);
-const videoId = params.get("id");
-let suggestedOffset = 0;
+const id = params.get("id");
 
-async function initPlayer() {
-    const data = await fetchVideos({ id: videoId });
-    if (data?.video) {
+let offset = 0;
+let activeSort = "discover";
+let currentQuery = "";
+let loading = false;
+
+const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
+
+// DOM Elements
+const playerWrapper = document.getElementById("playerWrapper");
+const videoTitle = document.getElementById("videoTitle");
+const videoMeta = document.getElementById("videoMeta");
+const upNextGrid = document.getElementById("upNextGrid");
+const grid = document.getElementById("discoverGrid");
+const loader = document.getElementById("loader");
+const loadMoreBtn = document.getElementById("loadMore");
+const resultsHintDesktop = document.getElementById("resultsHintDesktop");
+const searchDesktop = document.getElementById("q-desktop");
+const clearDesktop = document.getElementById("clearSearchDesktop");
+
+/* ================= VIDEO PLAYER ================= */
+async function loadVideo() {
+    try {
+        const data = await fetchVideos({ id });
+        if (!data?.video) {
+            videoTitle.textContent = "Video not found";
+            return;
+        }
+
         const v = data.video;
-        document.getElementById("videoTitle").textContent = v.title;
-        document.getElementById("videoMeta").textContent = `${v.duration} • ${v.views} views`;
-        
-        const wrapper = document.getElementById("playerWrapper");
-        wrapper.innerHTML = `
-            <img src="${v.thumbnail}" class="video-thumb" id="poster">
-            <button class="play-btn" id="play">▶</button>
-            <iframe id="frame" src="about:blank" allow="autoplay; fullscreen" style="display:none; width:100%; height:100%; border:none;"></iframe>
-        `;
+        videoTitle.textContent = v.title;
+        videoMeta.textContent = `${v.duration} • ${v.views} views`;
 
-        document.getElementById("play").onclick = () => {
-            const frame = document.getElementById("frame");
-            frame.src = v.proxiedEmbed;
-            frame.style.display = "block";
-            document.getElementById("poster").style.display = "none";
-            document.getElementById("play").style.display = "none";
-        };
+        renderThumbnailPlayer(v);
+    } catch (err) {
+        console.error("Player Load Error:", err);
+        videoTitle.textContent = "Error loading video";
     }
 }
 
-async function loadSuggested(reset = false) {
-    if (reset) { suggestedOffset = 0; document.getElementById("discoverGrid").innerHTML = ""; }
-    
-    const data = await fetchVideos({
-        limit: 20,
-        offset: suggestedOffset,
-        sort: "discover",
-        discoverSeed: sessionStorage.getItem('discover_seed')
-    });
+function renderThumbnailPlayer(video) {
+    // Falls back to manual construction if proxiedEmbed isn't in the object
+    const workerBase = "https://sendvid-proxy-tester.uilliam-maya.workers.dev/?url=";
+    const videoSrc = video.proxiedEmbed || (video.embed ? workerBase + encodeURIComponent(video.embed) : "");
 
-    const videos = (data.videos || []).filter(v => v.id !== videoId);
-    const grid = document.getElementById("discoverGrid");
+    playerWrapper.innerHTML = `
+        <div class="video-container" style="position: relative; width: 100%; height: 100%;">
+            <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; cursor: pointer; z-index: 2;">
+            <button class="play-btn" style="z-index: 3;">▶</button>
+            <iframe
+                class="video-frame"
+                src="about:blank"
+                allow="autoplay; fullscreen; picture-in-picture"
+                style="display: none; position: absolute; inset: 0; width: 100%; height: 100%; border: none; z-index: 1;"
+                allowfullscreen>
+            </iframe>
+        </div>
+    `;
 
-    videos.forEach(v => {
-        const el = document.createElement("div");
-        el.className = "card fade-in";
-        el.innerHTML = `
-            <a href="/w/${v.id}" class="card-link">
-                <img class="thumb" src="${v.thumbnail}">
-                <div class="card-body">
-                    <div class="title">${v.title}</div>
-                    <div class="meta">${v.duration}</div>
-                </div>
-            </a>`;
-        grid.appendChild(el);
-    });
+    const thumb = playerWrapper.querySelector(".video-thumb");
+    const frame = playerWrapper.querySelector(".video-frame");
+    const playBtn = playerWrapper.querySelector(".play-btn");
 
-    suggestedOffset = data.nextOffset;
-    document.getElementById("loadMore").style.display = suggestedOffset ? "block" : "none";
+    const playVideo = () => {
+        if (!videoSrc) return console.error("No source found");
+        frame.src = videoSrc;
+        frame.style.display = "block";
+        thumb.style.display = "none";
+        playBtn.style.display = "none";
+
+        if (!watched.has(video.id)) {
+            watched.add(video.id);
+            localStorage.setItem("watched", JSON.stringify(Array.from(watched)));
+        }
+    };
+
+    thumb.addEventListener("click", playVideo);
+    playBtn.addEventListener("click", playVideo);
 }
 
-document.getElementById("loadMore").onclick = () => loadSuggested();
-initPlayer();
-loadSuggested(true);
+/* ================= FETCH & RENDER ================= */
+async function fetchBatch(limit) {
+    try {
+        const data = await fetchVideos({
+            limit,
+            offset,
+            sort: activeSort,
+            q: currentQuery,
+            discoverSeed: CURRENT_SEED // Synchronized seed
+        });
+        offset = data.nextOffset ?? null;
+        return data.videos ?? [];
+    } catch (err) {
+        console.error("Batch Fetch Error:", err);
+        return [];
+    }
+}
+
+function createCard(v, side = false) {
+    const el = document.createElement("div");
+    el.className = `card ${side ? "side-card" : "fade-in"}`;
+    el.dataset.id = v.id;
+    if (watched.has(v.id) && !side) el.classList.add("watched");
+
+    // Clean URL used: /w/ instead of bridge.html?id=
+    el.innerHTML = `
+        <a href="/w/${v.id}" class="card-link ${side ? 'side-card-link' : ''}">
+            <img class="thumb" src="${v.thumbnail}" alt="${v.title}" loading="lazy">
+            <div class="card-body">
+                <div class="title">${v.title}</div>
+                <div class="meta">${v.duration} • ${v.views} views</div>
+            </div>
+        </a>
+    `;
+    return el;
+}
+
+function renderUpNext(videos) {
+    upNextGrid.innerHTML = "";
+    videos.slice(0, UP_NEXT_COUNT).forEach(v => upNextGrid.appendChild(createCard(v, true)));
+}
+
+function renderGrid(videos) {
+    const fragment = document.createDocumentFragment();
+    videos.forEach(v => fragment.appendChild(createCard(v, false)));
+    grid.appendChild(fragment);
+    if (resultsHintDesktop) resultsHintDesktop.textContent = `Showing ${grid.children.length} videos`;
+}
+
+async function load(reset = false) {
+    if (loading) return;
+    loading = true;
+    if (reset) { grid.innerHTML = ""; offset = 0; }
+    
+    loader.style.display = "block";
+    loadMoreBtn.style.display = "none";
+
+    const batch = await fetchBatch(PAGE_SIZE);
+    
+    if (reset) renderUpNext(batch);
+    renderGrid(batch);
+
+    loader.style.display = "none";
+    loading = false;
+    loadMoreBtn.style.display = (batch.length === PAGE_SIZE) ? "block" : "none";
+}
+
+/* ================= FILTERS & SEARCH ================= */
+document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        if (btn.dataset.sort === activeSort) return;
+        activeSort = btn.dataset.sort;
+        document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        load(true);
+    });
+});
+
+let searchTimer;
+searchDesktop?.addEventListener("input", e => {
+    if (clearDesktop) clearDesktop.style.display = e.target.value ? "block" : "none";
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+        currentQuery = e.target.value.trim();
+        load(true);
+    }, 400);
+});
+
+clearDesktop?.addEventListener("click", () => {
+    if (searchDesktop) searchDesktop.value = "";
+    clearDesktop.style.display = "none";
+    currentQuery = "";
+    load(true);
+});
+
+/* ================= INIT ================= */
+loadVideo();
+load(true);
+loadMoreBtn.onclick = () => load();
+
+// Back to top logic
+const backToTop = document.getElementById("backToTop");
+window.addEventListener("scroll", () => {
+    backToTop?.classList.toggle("visible", window.scrollY > 400);
+});
+backToTop?.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
