@@ -1,16 +1,9 @@
-import { fetchVideos } from "./api.js";
+// homepage.js
+import { fetchVideos } from "/api.js";
+import { createVideoCard } from "/cards.js";
+import { initBackToTop } from "/ui-backtotop.js";
 
 const PAGE_SIZE = 20;
-
-// 1. Unified Seed Logic (Key: 'discoverSeed')
-const CURRENT_SEED = (() => {
-    let seed = sessionStorage.getItem('discoverSeed');
-    if (!seed) {
-        seed = Math.random().toString(36).substring(2, 8);
-        sessionStorage.setItem('discoverSeed', seed);
-    }
-    return seed;
-})();
 
 let offset = 0;
 let activeSort = "relevance";
@@ -20,7 +13,7 @@ let loading = false;
 
 const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
 
-// Elements (Ensuring these match your HTML exactly)
+// DOM Elements
 const gallery = document.getElementById("gallery");
 const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
@@ -31,139 +24,132 @@ const searchMobile = document.getElementById("q-mobile");
 const clearDesktop = document.getElementById("clearSearchDesktop");
 const clearMobile = document.getElementById("clearSearchMobile");
 
-/* ---------- URL Sync (Original Working Logic) ---------- */
+// ---------------- URL SYNC ----------------
 function syncFromURL() {
-  const p = new URLSearchParams(location.search);
-  activeSort = p.get("sort") || "relevance";
-  activeLength = p.get("length");
-  currentQuery = p.get("q") || "";
-  
-  if (searchDesktop) searchDesktop.value = currentQuery;
-  if (searchMobile) searchMobile.value = currentQuery;
-  updateActiveButtons();
+    const p = new URLSearchParams(location.search);
+    activeSort = p.get("sort") || "relevance";
+    activeLength = p.get("length");
+    currentQuery = p.get("q") || "";
+
+    if (searchDesktop) searchDesktop.value = currentQuery;
+    if (searchMobile) searchMobile.value = currentQuery;
+
+    updateActiveButtons();
 }
 
 function syncToURL() {
-  const p = new URLSearchParams();
-  p.set("sort", activeSort);
-  if (activeLength) p.set("length", activeLength);
-  if (currentQuery) p.set("q", currentQuery);
-  history.replaceState({}, "", `?${p.toString()}`);
+    const p = new URLSearchParams();
+    p.set("sort", activeSort);
+    if (activeLength) p.set("length", activeLength);
+    if (currentQuery) p.set("q", currentQuery);
+    history.replaceState({}, "", `?${p.toString()}`);
 }
 
 function updateActiveButtons() {
-  document.querySelectorAll(".filter-btn").forEach(btn => {
-    if (btn.dataset.sort)
-      btn.classList.toggle("active", btn.dataset.sort === activeSort);
-    if (btn.dataset.length)
-      btn.classList.toggle("active", btn.dataset.length === activeLength);
-  });
-}
-
-/* ---------- Render (Original Working Logic) ---------- */
-function render(videos) {
-  const fragment = document.createDocumentFragment();
-  videos.forEach(v => {
-    const el = document.createElement("div");
-    el.className = "card fade-in";
-    el.dataset.id = v.id;
-    if (watched.has(v.id)) el.classList.add("watched");
-
-    el.innerHTML = `
-      <a href="/w/${v.id}" class="card-link">
-        <img class="thumb" src="${v.thumbnail}" alt="${v.title}" loading="lazy">
-        <div class="card-body">
-          <div class="title">${v.title}</div>
-          <div class="meta">${v.duration} • ${v.views} views</div>
-        </div>
-      </a>
-    `;
-    fragment.appendChild(el);
-  });
-  gallery.appendChild(fragment);
-}
-
-/* ---------- Load (Updated to handle GAS -1 signal) ---------- */
-async function load(reset = false) {
-  if (loading) return;
-  loading = true;
-
-  if (reset) {
-    gallery.innerHTML = "";
-    offset = 0; // Reset offset to start from beginning
-  }
-
-  loader.style.display = "block";
-  loadMoreBtn.style.display = "none";
-  if (emptyState) emptyState.style.display = "none";
-
-  try {
-    const data = await fetchVideos({
-      limit: PAGE_SIZE,
-      offset: offset, // Use the current offset variable
-      sort: activeSort,
-      length: activeLength,
-      q: currentQuery,
-      discoverSeed: activeSort === "discover" ? CURRENT_SEED : undefined
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+        if (btn.dataset.sort) btn.classList.toggle("active", btn.dataset.sort === activeSort);
+        if (btn.dataset.length) btn.classList.toggle("active", btn.dataset.length === activeLength);
     });
-
-    render(data.videos || []);
-
-    // 2. Pagination Logic: 
-    // If the API says -1, we stop. Otherwise, update the offset for the NEXT call.
-    if (data.nextOffset === -1 || !data.videos || data.videos.length < PAGE_SIZE) {
-      offset = null; 
-    } else {
-      offset = data.nextOffset; // This MUST be updated to 20, 40, etc.
-    }
-  } catch (err) {
-    console.error("Fetch failed", err);
-  }
-
-  loader.style.display = "none";
-  loading = false;
-  if (!gallery.children.length && emptyState) emptyState.style.display = "block";
-  if (offset !== null) loadMoreBtn.style.display = "block";
 }
 
-/* ---------- Events (Original Working Logic) ---------- */
+// ---------------- RENDER ----------------
+function render(videos) {
+    const fragment = document.createDocumentFragment();
+    videos.forEach(v => fragment.appendChild(createVideoCard(v, { watched })));
+    gallery.appendChild(fragment);
+}
+
+// ---------------- FETCH & LOAD ----------------
+async function fetchBatch(limit) {
+    try {
+        const data = await fetchVideos({
+            limit,
+            offset,
+            sort: activeSort,
+            length: activeLength,
+            q: currentQuery
+        });
+
+        if (!data.videos || data.videos.length < limit || data.nextOffset === -1) offset = null;
+        else offset = data.nextOffset;
+
+        return data.videos ?? [];
+    } catch (err) {
+        console.error("Fetch failed:", err);
+        return [];
+    }
+}
+
+async function load(reset = false) {
+    if (loading) return;
+    loading = true;
+
+    if (reset) {
+        gallery.innerHTML = "";
+        offset = 0;
+    }
+
+    loader.style.display = "block";
+    loadMoreBtn.style.display = "none";
+    if (emptyState) emptyState.style.display = "none";
+
+    const batch = await fetchBatch(PAGE_SIZE);
+    render(batch);
+
+    loader.style.display = "none";
+    loading = false;
+
+    if (!gallery.children.length && emptyState) emptyState.style.display = "block";
+    loadMoreBtn.style.display = (offset !== null) ? "block" : "none";
+}
+
+// ---------------- FILTERS ----------------
 document.querySelectorAll(".filter-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    if (btn.dataset.sort) activeSort = btn.dataset.sort;
-    if (btn.dataset.length) activeLength = activeLength === btn.dataset.length ? null : btn.dataset.length;
-    syncToURL();
-    updateActiveButtons();
-    load(true);
-  });
+    btn.onclick = () => {
+        if (btn.dataset.sort) activeSort = btn.dataset.sort;
+        if (btn.dataset.length) activeLength = activeLength === btn.dataset.length ? null : btn.dataset.length;
+        syncToURL();
+        updateActiveButtons();
+        load(true);
+    };
 });
 
-const handleSearch = (val) => {
-  currentQuery = val.trim();
-  syncToURL();
-  load(true);
+// ---------------- SEARCH ----------------
+let searchTimer;
+const handleSearch = val => {
+    currentQuery = val.trim();
+    syncToURL();
+    load(true);
 };
 
-searchDesktop?.addEventListener("input", (e) => handleSearch(e.target.value));
-searchMobile?.addEventListener("input", (e) => handleSearch(e.target.value));
+searchDesktop?.addEventListener("input", e => {
+    if (clearDesktop) clearDesktop.style.display = e.target.value ? "block" : "none";
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => handleSearch(e.target.value), 400);
+});
 
-loadMoreBtn.onclick = () => load();
+searchMobile?.addEventListener("input", e => {
+    if (clearMobile) clearMobile.style.display = e.target.value ? "block" : "none";
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => handleSearch(e.target.value), 400);
+});
 
-/* ---------- Back to Top Logic (Restored) ---------- */
-if (backToTop) {
-  window.addEventListener("scroll", () => {
-    if (window.scrollY > 400) {
-      backToTop.classList.add("visible");
-      backToTop.style.display = "block";
-    } else {
-      backToTop.classList.remove("visible");
-      backToTop.style.display = "none";
-    }
-  });
+clearDesktop?.addEventListener("click", () => {
+    searchDesktop.value = "";
+    clearDesktop.style.display = "none";
+    currentQuery = "";
+    load(true);
+});
 
-  backToTop.onclick = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-}
+clearMobile?.addEventListener("click", () => {
+    searchMobile.value = "";
+    clearMobile.style.display = "none";
+    currentQuery = "";
+    load(true);
+});
 
+// ---------------- INIT ----------------
 syncFromURL();
 load(true);
+loadMoreBtn.onclick = () => load();
+initBackToTop("backToTop");
