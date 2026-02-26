@@ -95,6 +95,15 @@ async function load(reset = false) {
 
     const batch = await fetchBatch(PAGE_SIZE);
     render(batch);
+    const resultsHintDesktop = document.getElementById("resultsHintDesktop");
+    const resultsHintMobile = document.getElementById("resultsHintMobile");
+
+    if (resultsHintDesktop) {
+    resultsHintDesktop.textContent = `Showing ${gallery.children.length} videos`;
+    }
+    if (resultsHintMobile) {
+    resultsHintMobile.textContent = `Showing ${gallery.children.length}`;
+    }
 
     loader.style.display = "none";
     loading = false;
