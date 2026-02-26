@@ -53,9 +53,11 @@ export async function loadMoreVideos() {
         });
 
         if (!data.videos || data.videos.length < PAGE_SIZE || data.nextOffset === -1) {
-            offset = null;
-        } else {
             offset = data.nextOffset;
+        } else if (!data.videos || data.videos.length < PAGE_SIZE) {
+            offset = null;
+            } else {
+            offset += PAGE_SIZE;
         }
 
         if (!gallery.children.length && emptyState) emptyState.style.display = "block";
