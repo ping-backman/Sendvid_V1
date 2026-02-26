@@ -1,19 +1,21 @@
-// player.js
+//player.js
 const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
 
-export function loadPlayer(video, wrapperId = "playerWrapper") {
-    const wrapper = document.getElementById(wrapperId);
+export function loadPlayer(video, wrapper) {
     if (!wrapper) return;
 
     const workerBase = "https://sendvid-proxy-tester.uilliam-maya.workers.dev/?url=";
-    const videoSrc = video.proxiedEmbed || (video.id ? workerBase + encodeURIComponent(`https://sendvid.com/embed/${video.id}`) : "");
+
+    const videoSrc =
+        video.proxiedEmbed ||
+        (video.id
+            ? workerBase + encodeURIComponent(`https://sendvid.com/embed/${video.id}`)
+            : "");
 
     wrapper.innerHTML = `
-        <div class="video-container" style="position: relative; width: 100%; height: 100%;">
-            <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; cursor: pointer; z-index: 2;">
-            <button class="play-btn" style="z-index: 3;">▶</button>
-            <iframe class="video-frame" src="about:blank" allow="autoplay; fullscreen" style="display: none; position: absolute; inset: 0; width: 100%; height: 100%; border: none; z-index: 1;" allowfullscreen></iframe>
-        </div>
+        <img src="${video.thumbnail}" class="video-thumb" alt="${video.title}">
+        <button class="play-btn">▶</button>
+        <iframe class="video-frame" src="about:blank" allow="autoplay; fullscreen" allowfullscreen></iframe>
     `;
 
     const thumb = wrapper.querySelector(".video-thumb");
@@ -21,6 +23,8 @@ export function loadPlayer(video, wrapperId = "playerWrapper") {
     const playBtn = wrapper.querySelector(".play-btn");
 
     const playVideo = () => {
+        if (!videoSrc) return;
+
         frame.src = videoSrc;
         frame.style.display = "block";
         thumb.style.display = "none";
