@@ -1,27 +1,20 @@
-// api.js
+//api.js
 const API_BASE = "https://api-cache.uilliam-maya.workers.dev";
 
 export async function fetchVideos(params = {}) {
-    const url = new URL(API_BASE);
+  const url = new URL(API_BASE);
 
-    // Explicitly mapping for GAS compatibility
-    const mapping = {
-        discoverSeed: params.discoverSeed,
-        limit: params.limit,
-        offset: params.offset,
-        sort: params.sort,
-        q: params.q,
-        id: params.id,
-        length: params.length
-    };
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      url.searchParams.set(key, value);
+    }
+  });
 
-    Object.entries(mapping).forEach(([k, v]) => {
-        if (v !== undefined && v !== null && v !== "") {
-            url.searchParams.set(k, v);
-        }
-    });
+  const res = await fetch(url.toString());
 
-    const res = await fetch(url.toString());
-    if (!res.ok) throw new Error("API Fetch failed");
-    return res.json();
+  if (!res.ok) {
+    throw new Error("API request failed");
+  }
+
+  return res.json();
 }
