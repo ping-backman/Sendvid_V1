@@ -8,16 +8,20 @@ const PAGE_SIZE = 20;
 const UP_NEXT_COUNT = 4;
 
 const params = new URLSearchParams(location.search);
-const videoId = params.get("id") || window.location.pathname.split('/').filter(Boolean).pop();
+const videoId =
+  params.get("id") ||
+  window.location.pathname.split("/").filter(Boolean).pop();
 
 let offset = 0;
 let activeSort = "discover";
 let currentQuery = "";
 let loading = false;
 
-const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
+const watched = new Set(
+  JSON.parse(localStorage.getItem("watched") || "[]")
+);
 
-// DOM Elements
+// DOM
 const playerWrapper = document.getElementById("playerWrapper");
 const videoTitle = document.getElementById("videoTitle");
 const videoMeta = document.getElementById("videoMeta");
@@ -27,124 +31,118 @@ const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
 const searchDesktop = document.getElementById("q-desktop");
 const clearDesktop = document.getElementById("clearSearchDesktop");
-const resultsHintDesktop = document.getElementById("resultsHintDesktop");
 
-/* ================= VIDEO PLAYER ================= */
+// ---------------- LOAD VIDEO ----------------
 async function loadVideo() {
-    if (!videoId || videoId === 'v') {
-        videoTitle.textContent = "No Video ID provided";
-        return;
+  if (!videoId) {
+    videoTitle.textContent = "No Video ID provided";
+    return;
+  }
+
+  try {
+    const data = await fetchVideos({ id: videoId });
+
+    if (!data?.video) {
+      videoTitle.textContent = "Video not found";
+      return;
     }
 
-    try {
-        const data = await fetchVideos({ id: videoId });
-        if (!data?.video) {
-            videoTitle.textContent = "Video not found";
-            return;
-        }
+    const v = data.video;
+    videoTitle.textContent = v.title;
+    videoMeta.textContent = `${v.duration} • ${v.views} views`;
 
-        const v = data.video;
-        videoTitle.textContent = v.title;
-        videoMeta.textContent = `${v.duration} • ${v.views} views`;
-        loadPlayer(v, playerWrapper, watched);
-    } catch (err) {
-        console.error("Error loading video:", err);
-        videoTitle.textContent = "Error loading video";
-    }
+    loadPlayer(v, playerWrapper, watched);
+  } catch (err) {
+    console.error(err);
+    videoTitle.textContent = "Error loading video";
+  }
 }
 
-/* ================= FETCH & RENDER ================= */
+// ---------------- FETCH ----------------
 async function fetchBatch(limit) {
-    try {
-        const data = await fetchVideos({
-            limit,
-            offset,
-            sort: activeSort,
-            q: currentQuery
-        });
+  try {
+    const data = await fetchVideos({
+      limit,
+      offset,
+      sort: activeSort,
+      q: currentQuery
+    });
 
-        // Pagination logic
-        if (!data.videos || data.videos.length < limit || data.nextOffset === -1) {
-            offset = null;
-        } else {
-            offset = data.nextOffset;
-        }
-
-        return data.videos ?? [];
-    } catch (err) {
-        console.error("Batch fetch failed:", err);
-        return [];
+    if (!data.videos || data.videos.length < limit || data.nextOffset === -1) {
+      offset = null;
+    } else {
+      offset = data.nextOffset;
     }
+
+    return data.videos ?? [];
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
 }
 
-function createCard(video, side = false) {
-    return createVideoCard(video, { compact: side, watched });
-}
-
-/* ================= LOAD & RENDER ================= */
+// ---------------- LOAD ----------------
 async function load(reset = false) {
-    if (loading) return;
-    loading = true;
+  if (loading) return;
+  loading = true;
 
-    if (reset) {
-        grid.innerHTML = "";
-        offset = 0;
-    }
+  if (reset) {
+    grid.innerHTML = "";
+    if (upNextGrid) upNextGrid.innerHTML = "";
+    offset = 0;
+  }
 
-    loader.style.display = "block";
-    loadMoreBtn.style.display = "none";
+  loader.style.display = "block";
+  loadMoreBtn.style.display = "none";
 
-    const batch = await fetchBatch(PAGE_SIZE);
+  const batch = await fetchBatch(PAGE_SIZE);
 
-    // Up Next
-    if (reset && upNextGrid) {
-        upNextGrid.innerHTML = "";
-        batch.slice(0, UP_NEXT_COUNT).forEach(v => upNextGrid.appendChild(createCard(v, true)));
-    }
+  if (reset && upNextGrid) {
+    batch
+      .slice(0, UP_NEXT_COUNT)
+      .forEach(v =>
+        upNextGrid.appendChild(
+          createVideoCard(v, { compact: true, watched })
+        )
+      );
+  }
 
-    const fragment = document.createDocumentFragment();
-    batch.forEach(v => fragment.appendChild(createCard(v, false)));
-    grid.appendChild(fragment);
+  const fragment = document.createDocumentFragment();
+  batch.forEach(v =>
+    fragment.appendChild(createVideoCard(v, { watched }))
+  );
 
-    if (resultsHintDesktop) {
-        resultsHintDesktop.textContent = `Showing ${grid.children.length} suggested`;
-    }
+  grid.appendChild(fragment);
 
-    loader.style.display = "none";
-    loading = false;
-    loadMoreBtn.style.display = (offset !== null) ? "block" : "none";
+  loader.style.display = "none";
+  loading = false;
+
+  loadMoreBtn.style.display = offset !== null ? "block" : "none";
 }
 
-/* ================= FILTERS ================= */
-document.querySelectorAll(".filter-btn").forEach(btn => {
-    btn.onclick = () => {
-        if (btn.dataset.sort === activeSort) return;
-        activeSort = btn.dataset.sort;
-        document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        load(true);
-    };
-});
-
-/* ================= SEARCH ================= */
+// ---------------- SEARCH ----------------
 let searchTimer;
+
 searchDesktop?.addEventListener("input", e => {
-    if (clearDesktop) clearDesktop.style.display = e.target.value ? "block" : "none";
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => {
-        currentQuery = e.target.value.trim();
-        load(true);
-    }, 400);
+  if (clearDesktop) {
+    clearDesktop.style.display = e.target.value ? "block" : "none";
+  }
+
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentQuery = e.target.value.trim();
+    load(true);
+  }, 400);
 });
 
 clearDesktop?.addEventListener("click", () => {
-    searchDesktop.value = "";
-    clearDesktop.style.display = "none";
-    currentQuery = "";
-    load(true);
+  searchDesktop.value = "";
+  clearDesktop.style.display = "none";
+  currentQuery = "";
+  load(true);
 });
 
-/* ================= INIT ================= */
+// ---------------- INIT ----------------
 loadVideo();
 load(true);
 loadMoreBtn.onclick = () => load();
