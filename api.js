@@ -1,5 +1,5 @@
 //api.js
-const API_BASE = "https://api-cache.uilliam-maya.workers.dev";
+const API_BASE = "https://api-cache.uilliam-maya.workers.dev/";
 
 export async function fetchVideos(params = {}) {
   const url = new URL(API_BASE);
