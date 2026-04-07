@@ -1,63 +1,71 @@
+// bridge.js //
 import { fetchVideos } from "/api.js";
 
-/** * Hybrid ID Detection
- * 1. Checks URL query params (?id=...)
- * 2. If empty, checks the URL path (/w/ID)
- */
-const params = new URLSearchParams(location.search);
-const videoId = params.get("id") || window.location.pathname.split('/').filter(Boolean).pop();
+const statusTextEl =
+document.getElementById("statusText");
 
-let timeLeft = 6;
-const timerEl = document.getElementById("timer");
-const statusTextEl = document.getElementById("statusText");
-const watchBtn = document.getElementById("watchBtn");
-const previewCard = document.getElementById("previewCard");
+const countdownEl =
+document.getElementById("countdown");
 
-async function initBridge() {
-    // Check if ID is "w" or empty (happens if path is just /w/)
-    if (!videoId || videoId === 'w') {
-        statusTextEl.textContent = "Error: No video ID detected.";
-        console.error("Pathname: ", window.location.pathname);
-        return;
-    }
+const videoId = window.VIDEO_ID;
 
-    // 1. Fetch Metadata for the Preview Card
-    try {
-        const data = await fetchVideos({ id: videoId });
-        if (data?.video) {
-            const v = data.video;
-            document.getElementById("prevThumb").src = v.thumbnail;
-            document.getElementById("prevTitle").textContent = v.title;
-            document.getElementById("prevMeta").textContent = `${v.duration} • ${v.views} views`;
-            previewCard.style.display = "block";
-        } else {
-            statusTextEl.textContent = "Video not found.";
-        }
-    } catch (e) {
-        console.error("Metadata fetch failed", e);
-    }
+async function init(){
 
-    // 2. Countdown Logic
-    const countdown = setInterval(() => {
-        timeLeft--;
-        if (timeLeft > 0) {
-            timerEl.textContent = timeLeft;
-        } else {
-            clearInterval(countdown);
-            statusTextEl.innerHTML = "Ready to watch!";
-            
-            // Enable and stylize Watch Button
-            watchBtn.textContent = "Continue to Video";
-            watchBtn.classList.add("active");
-            watchBtn.disabled = false;
-            watchBtn.style.cursor = "pointer";
-            
-            // Final Redirect to the Clean Video URL
-            watchBtn.onclick = () => {
-                window.location.href = `/v/${videoId}`;
-            };
-        }
-    }, 1000);
+try{
+
+const data = await fetchVideos({ id: videoId });
+
+if(!data?.videos || data.videos.length===0){
+
+statusTextEl.textContent =
+"Video unavailable.";
+
+return;
+
 }
 
-initBridge();
+startCountdown(videoId);
+
+}catch(err){
+
+console.error(err);
+
+statusTextEl.textContent =
+"Error loading video.";
+
+}
+
+}
+
+function startCountdown(id){
+
+let remaining = 5;
+
+countdownEl.textContent = remaining;
+
+const timer = setInterval(()=>{
+
+remaining--;
+
+countdownEl.textContent = remaining;
+
+if(remaining<=0){
+
+clearInterval(timer);
+
+/*****************
+ TOKEN GENERATION
+*****************/
+
+const token = Date.now();
+
+window.location.href =
+`/v/${id}?t=${token}`;
+
+}
+
+},1000);
+
+}
+
+init();
