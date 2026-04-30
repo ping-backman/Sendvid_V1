@@ -11,9 +11,7 @@ const prevMeta = document.getElementById("prevMeta");
 
 const watchBtn = document.getElementById("watchBtn");
 
-/* ============================
-   ID RESOLUTION
-============================ */
+/* ID RESOLUTION */
 const params = new URLSearchParams(window.location.search);
 let videoId = params.get("id");
 
@@ -21,7 +19,6 @@ if (!videoId) {
   const parts = window.location.pathname.split("/").filter(Boolean);
   videoId = parts[parts.length - 1];
 }
-/* ============================ */
 
 async function init() {
   try {
@@ -30,6 +27,9 @@ async function init() {
       statusTextEl.textContent = "Invalid video.";
       return;
     }
+
+    // Start countdown IMMEDIATELY (no delay perception)
+    startCountdown(videoId);
 
     const data = await fetchVideos({ id: videoId });
 
@@ -40,34 +40,28 @@ async function init() {
 
     const v = data.videos[0];
 
-    // Preview
+    // FAST thumbnail render
     prevThumb.src = v.thumbnail;
     prevTitle.textContent = v.title;
     prevMeta.textContent = `${v.views} views`;
 
     previewCard.style.display = "block";
 
-    // Preload thumbnail
-    const img = new Image();
-    img.src = v.thumbnail;
-
-    // Preconnect + DNS prefetch
+    // Preconnect early
     try {
       const origin = new URL(v.embed).origin;
 
-      const preconnect = document.createElement("link");
-      preconnect.rel = "preconnect";
-      preconnect.href = origin;
+      const link1 = document.createElement("link");
+      link1.rel = "preconnect";
+      link1.href = origin;
 
-      const dns = document.createElement("link");
-      dns.rel = "dns-prefetch";
-      dns.href = origin;
+      const link2 = document.createElement("link");
+      link2.rel = "dns-prefetch";
+      link2.href = origin;
 
-      document.head.appendChild(preconnect);
-      document.head.appendChild(dns);
+      document.head.appendChild(link1);
+      document.head.appendChild(link2);
     } catch (e) {}
-
-    startCountdown(videoId);
 
   } catch (err) {
     console.error(err);
@@ -85,7 +79,6 @@ function startCountdown(id) {
     remaining--;
     countdownEl.textContent = remaining;
 
-    // Pre-activation glow
     if (remaining === 2) {
       watchBtn.classList.add("pre-active");
     }
@@ -96,12 +89,9 @@ function startCountdown(id) {
       watchBtn.classList.add("active");
       watchBtn.textContent = "▶ Watch Now";
 
-      // Enable click ONLY (no auto redirect)
       watchBtn.onclick = () => redirect(id);
 
-      if (statusTextEl) {
-        statusTextEl.textContent = "Your video is ready";
-      }
+      statusTextEl.textContent = "Your video is ready";
     }
 
   }, 1000);
