@@ -2,8 +2,6 @@
 import { fetchVideos } from "/api.js";
 
 const statusTextEl = document.getElementById("statusText");
-
-// ✅ FIX: correct ID
 const countdownEl = document.getElementById("timer");
 
 const previewCard = document.getElementById("previewCard");
@@ -13,7 +11,18 @@ const prevMeta = document.getElementById("prevMeta");
 
 const watchBtn = document.getElementById("watchBtn");
 
-const videoId = window.VIDEO_ID;
+/* ============================
+   ✅ BULLETPROOF ID RESOLUTION
+============================ */
+const params = new URLSearchParams(window.location.search);
+let videoId = params.get("id");
+
+if (!videoId) {
+  const parts = window.location.pathname.split("/").filter(Boolean);
+  videoId = parts[parts.length - 1];
+}
+
+/* ============================ */
 
 async function init() {
   try {
@@ -32,18 +41,18 @@ async function init() {
 
     const v = data.videos[0];
 
-    // ✅ Populate preview (FAST visual feedback)
+    // Preview
     if (prevThumb) prevThumb.src = v.thumbnail;
     if (prevTitle) prevTitle.textContent = v.title;
     if (prevMeta) prevMeta.textContent = `${v.views} views`;
 
     if (previewCard) previewCard.style.display = "block";
 
-    // ✅ Preload thumbnail aggressively
+    // Preload thumbnail
     const img = new Image();
     img.src = v.thumbnail;
 
-    // ✅ Preconnect to video host (speeds embed load)
+    // Preconnect to video host
     try {
       const link = document.createElement("link");
       link.rel = "preconnect";
@@ -75,14 +84,12 @@ function startCountdown(id) {
 
       clearInterval(timer);
 
-      // Activate button
       if (watchBtn) {
         watchBtn.classList.add("active");
         watchBtn.textContent = "Watch Now";
         watchBtn.onclick = () => redirect(id);
       }
 
-      // Auto redirect (optional, keeps your current behavior)
       redirect(id);
     }
 
