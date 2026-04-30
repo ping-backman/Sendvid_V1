@@ -5,93 +5,151 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Preparing your video...</title>
 
-<link rel="stylesheet" href="/theme.css">
-
 <style>
 
-/* ===== GLOBAL LOCK ===== */
+/* ================= BASE (FROM theme.css) ================= */
+:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --panel-soft: #1e2230;
+  --text: #e6e8ee;
+  --muted: #9aa1b2;
+  --accent: #5c7cfa;
+  --border: #2a2f3a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ================= GLOBAL LOCK ================= */
 html, body {
-    height: 100%;
-    overflow: hidden;
+  height: 100%;
+  overflow: hidden;
 }
 
-/* ===== LAYOUT ===== */
+/* ================= LAYOUT ================= */
 .bridge-content {
-    max-width: 620px; /* slightly wider than normal cards */
-    margin: 0 auto;
-    padding: 10px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 10px;
 
-    display: flex;
-    flex-direction: column;
-    height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
 }
 
-/* ===== TIMER ===== */
+/* ================= TIMER ================= */
 .timer-text {
-    font-size: 13px;
-    margin-bottom: 10px;
-    color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 10px;
+  color: var(--muted);
 }
 
-/* ===== CARD WRAPPER (NO INTERNAL CHANGES) ===== */
+/* ================= CORE CARD SYSTEM ================= */
+.card {
+  background: var(--panel);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+
+  display: flex;
+  flex-direction: column;
+}
+
+.thumb {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .thumb {
+    height: 180px;
+  }
+}
+
+.card-body {
+  padding: 10px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ================= BRIDGE CARD WRAPPER ================= */
 .bridge-card {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
-/* 🚫 IMPORTANT: DO NOT TOUCH .thumb */
-/* 🚫 DO NOT TOUCH .card-body */
-/* 🚫 DO NOT TOUCH .title / .meta */
-
-/* ===== BUTTON ===== */
+/* ================= BUTTON ================= */
 #watchBtn {
-    position: relative;
-    width: 100%;
-    padding: 10px;
-    margin-top: 8px;
+  position: relative;
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
 
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
 
-    background: #2a2a2a;
-    color: #aaa;
+  background: #2a2a2a;
+  color: #aaa;
 
-    cursor: not-allowed;
-    overflow: hidden;
+  cursor: not-allowed;
+  overflow: hidden;
 }
 
 /* ===== LOADING WAVE ===== */
 #watchBtn::before {
-    content: "";
-    position: absolute;
-    left: -100%;
-    top: 0;
-    height: 100%;
-    width: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,0,85,0.5), transparent);
-    animation: loadingWave 1.2s linear infinite;
+  content: "";
+  position: absolute;
+  left: -100%;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,0,85,0.5), transparent);
+  animation: loadingWave 1.2s linear infinite;
 }
 
 @keyframes loadingWave {
-    100% { left: 100%; }
+  100% { left: 100%; }
+}
+
+/* ===== PRE-ACTIVE ===== */
+#watchBtn.pre-active {
+  box-shadow: 0 0 8px rgba(255,0,85,0.3);
 }
 
 /* ===== ACTIVE ===== */
 #watchBtn.active {
-    background: #00c853;
-    color: #fff;
-    cursor: pointer;
-    transform: scale(1.03);
+  background: #00c853;
+  color: #fff;
+  cursor: pointer;
+  transform: scale(1.03);
 }
 
 #watchBtn.active::before {
-    display: none;
+  display: none;
 }
 
-/* ===== SOCIAL BAR SPACE ===== */
+/* ================= SOCIAL BAR SPACE ================= */
 #ad-container {
-    height: 80px;
-    margin-top: auto; /* pushes it to bottom cleanly */
+  height: 80px;
+  margin-top: auto;
 }
 
 </style>
@@ -101,23 +159,23 @@ html, body {
 
 <div class="bridge-content">
 
-    <p class="timer-text" id="statusText">
-        Preparing your video… <span id="timer">5</span>
-    </p>
+  <p class="timer-text" id="statusText">
+    Preparing your video… <span id="timer">5</span>
+  </p>
 
-    <!-- ✅ EXACT SAME CARD -->
-    <div class="card bridge-card" id="previewCard" style="display:none;">
-        <img id="prevThumb" class="thumb">
+  <!-- EXACT SAME CARD SYSTEM -->
+  <div class="card bridge-card" id="previewCard" style="display:none;">
+    <img id="prevThumb" class="thumb" loading="eager" decoding="async">
 
-        <div class="card-body">
-            <div class="title" id="prevTitle">Loading...</div>
-            <div class="meta" id="prevMeta">-- views</div>
-        </div>
+    <div class="card-body">
+      <div class="title" id="prevTitle">Loading...</div>
+      <div class="meta" id="prevMeta">-- views</div>
     </div>
+  </div>
 
-    <button id="watchBtn">Please wait...</button>
+  <button id="watchBtn">Please wait...</button>
 
-    <div id="ad-container"></div>
+  <div id="ad-container"></div>
 
 </div>
 
