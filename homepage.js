@@ -7,7 +7,7 @@ const PAGE_SIZE = 20;
 
 let offset = 0;
 let activeSort = "relevance";
-//let activeLength = null;
+let activeDuration = ""; // ✅ NEW
 let currentQuery = "";
 let loading = false;
 
@@ -19,9 +19,25 @@ const gallery = document.getElementById("gallery");
 const loader = document.getElementById("loader");
 const loadMoreBtn = document.getElementById("loadMore");
 const emptyState = document.getElementById("emptyState");
-const searchInput = document.getElementById("searchInput");
+
+// Support BOTH desktop + mobile search inputs
+const searchInputDesktop = document.getElementById("q-desktop");
+const searchInputMobile = document.getElementById("q-mobile");
+
 const resultsHintDesktop = document.getElementById("resultsHintDesktop");
 const resultsHintMobile = document.getElementById("resultsHintMobile");
+
+/**
+ * Map UI duration → GAS shorthand
+ */
+function mapDuration(value) {
+  switch (value) {
+    case "short": return "<10m";
+    case "long": return "10-40m";
+    case "longest": return "40m+";
+    default: return "";
+  }
+}
 
 /**
  * Fetches a batch of videos and manages the offset state
@@ -32,10 +48,10 @@ async function fetchBatch(limit) {
       limit,
       offset,
       sort: activeSort,
-      q: currentQuery
+      q: currentQuery,
+      minDuration: activeDuration // ✅ KEY FIX
     });
 
-    // Update offset logic: if no more videos or nextOffset is -1, we stop
     if (!data.videos || data.videos.length < limit || data.nextOffset === -1) {
       offset = null;
     } else {
@@ -51,7 +67,6 @@ async function fetchBatch(limit) {
 
 /**
  * Loads videos into the gallery
- * @param {boolean} reset - If true, clears the gallery and resets offset
  */
 async function load(reset = false) {
   if (loading) return;
@@ -68,22 +83,19 @@ async function load(reset = false) {
 
   const batch = await fetchBatch(PAGE_SIZE);
 
-  // Handle Empty State
   if (reset && batch.length === 0) {
     if (emptyState) emptyState.style.display = "block";
     if (resultsHintDesktop) resultsHintDesktop.textContent = "No videos found";
     if (resultsHintMobile) resultsHintMobile.textContent = "0 videos";
   } else {
     if (emptyState) emptyState.style.display = "none";
-    
-    // Use fragment for better performance on 30k+ potential items
+
     const fragment = document.createDocumentFragment();
     batch.forEach(v => {
       fragment.appendChild(createVideoCard(v, { watched }));
     });
     gallery.appendChild(fragment);
 
-    // Update result counters
     const count = gallery.children.length;
     if (resultsHintDesktop) resultsHintDesktop.textContent = `Showing ${count} videos`;
     if (resultsHintMobile) resultsHintMobile.textContent = `Showing ${count}`;
@@ -92,52 +104,84 @@ async function load(reset = false) {
   if (loader) loader.style.display = "none";
   loading = false;
 
-  // Show Load More only if we have a valid next offset
   if (loadMoreBtn) {
     loadMoreBtn.style.display = (offset !== null && batch.length > 0) ? "block" : "none";
   }
 }
 
 /**
- * Event Listeners & Initialization
+ * ================= EVENT LISTENERS =================
  */
 
-// 1. Sort Buttons
-document.querySelectorAll(".filter-btn").forEach(btn => {
+// SORT buttons (unchanged behavior)
+document.querySelectorAll("[data-sort]").forEach(btn => {
   btn.onclick = () => {
-    // UI Polish: Remove active class from others
-    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll("[data-sort]").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
 
     activeSort = btn.dataset.sort;
-    
-    // Clear search when switching sorts to avoid confusion, 
-    // unless you want to sort search results (handled by GAS)
-    currentQuery = ""; 
-    if (searchInput) searchInput.value = "";
-    
+
+    // reset search
+    currentQuery = "";
+    if (searchInputDesktop) searchInputDesktop.value = "";
+    if (searchInputMobile) searchInputMobile.value = "";
+
     load(true);
   };
 });
 
-// 2. Search Input with Debounce (500ms)
-if (searchInput) {
+/**
+ * ✅ DURATION FILTER (NEW)
+ */
+document.querySelectorAll("[data-length]").forEach(btn => {
+  btn.onclick = () => {
+
+    // Toggle behavior (click again to clear)
+    if (btn.classList.contains("active")) {
+      btn.classList.remove("active");
+      activeDuration = "";
+    } else {
+      document.querySelectorAll("[data-length]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeDuration = mapDuration(btn.dataset.length);
+    }
+
+    load(true);
+  };
+});
+
+/**
+ * SEARCH (desktop + mobile synced)
+ */
+function bindSearch(input) {
+  if (!input) return;
+
   let debounceTimer;
-  searchInput.oninput = (e) => {
+
+  input.oninput = (e) => {
     clearTimeout(debounceTimer);
+
     debounceTimer = setTimeout(() => {
       currentQuery = e.target.value.trim();
+
+      // sync both inputs
+      if (searchInputDesktop) searchInputDesktop.value = currentQuery;
+      if (searchInputMobile) searchInputMobile.value = currentQuery;
+
       load(true);
     }, 500);
   };
 }
 
-// 3. Load More
+bindSearch(searchInputDesktop);
+bindSearch(searchInputMobile);
+
+// LOAD MORE
 if (loadMoreBtn) {
   loadMoreBtn.onclick = () => load();
 }
 
-// 4. Back to Top Component
+// Back to top
 initBackToTop("backToTop");
 
 // Initial Load
