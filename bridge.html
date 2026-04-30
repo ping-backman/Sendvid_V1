@@ -12,21 +12,26 @@
 /* ===== GLOBAL LOCK ===== */
 html, body {
     height: 100%;
-    overflow: hidden; /* scroll lock */
+    overflow: hidden;
 }
 
 /* ===== LAYOUT ===== */
 .bridge-content {
     max-width: 420px;
-    margin: 8px auto 0;
-    padding: 5px 12px min(90px, calc(70px + env(safe-area-inset-bottom)));
+    margin: 0 auto;
+    padding: 5px 12px 0;
+
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* ===== TIMER ===== */
 .timer-text {
     font-size: 0.95rem;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     opacity: 0.85;
+    flex-shrink: 0;
 }
 
 /* ===== CARD ===== */
@@ -34,34 +39,39 @@ html, body {
     background: #1a1a1a;
     border-radius: 12px;
     overflow: hidden;
-    margin: 10px 0;
+    margin: 6px 0;
     border: 1px solid #333;
+
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
-/* ===== THUMBNAIL (ZOOMED) ===== */
+/* ===== THUMBNAIL (MAXIMIZED) ===== */
 .preview-thumb {
     width: 100%;
-    aspect-ratio: 16/9;
+    height: 100%;
     object-fit: cover;
-    object-position: center;
-    transform: scale(1.08);
-    opacity: 0.85;
+    object-position: center; /* change to 'top' if needed */
+
+    flex: 1;
     background: #111;
 }
 
-/* ===== META (COMPRESSED) ===== */
+/* ===== META ===== */
 .preview-info {
-    padding: 8px 10px;
+    padding: 6px 8px;
+    flex-shrink: 0;
 }
 
 #prevTitle {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     margin-bottom: 2px;
     line-height: 1.2;
 }
 
 #prevMeta {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     opacity: 0.7;
 }
 
@@ -69,14 +79,20 @@ html, body {
 #watchBtn {
     position: relative;
     width: 100%;
-    padding: 12px;
+    padding: 10px;
+    margin-top: 6px;
+
     border-radius: 10px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: bold;
+
     background: #2a2a2a;
     color: #aaa;
+
     cursor: not-allowed;
     overflow: hidden;
+
+    flex-shrink: 0;
 }
 
 /* ===== LOADING WAVE ===== */
@@ -100,7 +116,7 @@ html, body {
     box-shadow: 0 0 8px rgba(255,0,85,0.3);
 }
 
-/* ===== ACTIVE (GREEN + VIBRATION) ===== */
+/* ===== ACTIVE ===== */
 #watchBtn.active {
     background: #00c853;
     color: #fff;
@@ -109,7 +125,6 @@ html, body {
     animation: pulse 0.4s ease-in-out 2;
 }
 
-/* remove wave when active */
 #watchBtn.active::before {
     display: none;
 }
@@ -118,6 +133,12 @@ html, body {
     0% { transform: scale(1); }
     50% { transform: scale(1.06); }
     100% { transform: scale(1.04); }
+}
+
+/* ===== SOCIAL BAR SPACE ===== */
+#ad-container {
+    height: 80px;
+    flex-shrink: 0;
 }
 
 </style>
@@ -142,7 +163,7 @@ html, body {
 
     <button id="watchBtn">Please wait...</button>
 
-    <div id="ad-container" style="margin-top: 15px;"></div>
+    <div id="ad-container"></div>
 
 </div>
 
