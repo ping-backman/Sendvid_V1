@@ -1,71 +1,97 @@
-// bridge.js //
+// bridge.js
 import { fetchVideos } from "/api.js";
 
-const statusTextEl =
-document.getElementById("statusText");
+const statusTextEl = document.getElementById("statusText");
 
-const countdownEl =
-document.getElementById("countdown");
+// ✅ FIX: correct ID
+const countdownEl = document.getElementById("timer");
+
+const previewCard = document.getElementById("previewCard");
+const prevThumb = document.getElementById("prevThumb");
+const prevTitle = document.getElementById("prevTitle");
+const prevMeta = document.getElementById("prevMeta");
+
+const watchBtn = document.getElementById("watchBtn");
 
 const videoId = window.VIDEO_ID;
 
-async function init(){
+async function init() {
+  try {
 
-try{
+    if (!videoId) {
+      if (statusTextEl) statusTextEl.textContent = "Invalid video.";
+      return;
+    }
 
-const data = await fetchVideos({ id: videoId });
+    const data = await fetchVideos({ id: videoId });
 
-if(!data?.videos || data.videos.length===0){
+    if (!data?.videos || data.videos.length === 0) {
+      if (statusTextEl) statusTextEl.textContent = "Video unavailable.";
+      return;
+    }
 
-statusTextEl.textContent =
-"Video unavailable.";
+    const v = data.videos[0];
 
-return;
+    // ✅ Populate preview (FAST visual feedback)
+    if (prevThumb) prevThumb.src = v.thumbnail;
+    if (prevTitle) prevTitle.textContent = v.title;
+    if (prevMeta) prevMeta.textContent = `${v.views} views`;
 
+    if (previewCard) previewCard.style.display = "block";
+
+    // ✅ Preload thumbnail aggressively
+    const img = new Image();
+    img.src = v.thumbnail;
+
+    // ✅ Preconnect to video host (speeds embed load)
+    try {
+      const link = document.createElement("link");
+      link.rel = "preconnect";
+      link.href = new URL(v.embed).origin;
+      document.head.appendChild(link);
+    } catch (e) {}
+
+    startCountdown(videoId);
+
+  } catch (err) {
+    console.error(err);
+    if (statusTextEl) statusTextEl.textContent = "Error loading video.";
+  }
 }
 
-startCountdown(videoId);
+function startCountdown(id) {
 
-}catch(err){
+  let remaining = 5;
 
-console.error(err);
+  if (countdownEl) countdownEl.textContent = remaining;
 
-statusTextEl.textContent =
-"Error loading video.";
+  const timer = setInterval(() => {
 
+    remaining--;
+
+    if (countdownEl) countdownEl.textContent = remaining;
+
+    if (remaining <= 0) {
+
+      clearInterval(timer);
+
+      // Activate button
+      if (watchBtn) {
+        watchBtn.classList.add("active");
+        watchBtn.textContent = "Watch Now";
+        watchBtn.onclick = () => redirect(id);
+      }
+
+      // Auto redirect (optional, keeps your current behavior)
+      redirect(id);
+    }
+
+  }, 1000);
 }
 
-}
-
-function startCountdown(id){
-
-let remaining = 5;
-
-countdownEl.textContent = remaining;
-
-const timer = setInterval(()=>{
-
-remaining--;
-
-countdownEl.textContent = remaining;
-
-if(remaining<=0){
-
-clearInterval(timer);
-
-/*****************
- TOKEN GENERATION
-*****************/
-
-const token = Date.now();
-
-window.location.href =
-`/v/${id}?t=${token}`;
-
-}
-
-},1000);
-
+function redirect(id) {
+  const token = Date.now();
+  window.location.href = `/v/${id}?t=${token}`;
 }
 
 init();
