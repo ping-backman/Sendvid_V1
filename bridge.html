@@ -1,151 +1,152 @@
-<!-- bridge.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preparing your video...</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preparing your video...</title>
 
-    <link rel="stylesheet" href="/theme.css">
+<link rel="stylesheet" href="/theme.css">
 
-    <style>
-        /* ================= ORIGINAL BASE STYLES ================= */
+<style>
 
-        .preview-card {
-            background: #1a1a1a;
-            border-radius: 12px;
-            overflow: hidden;
-            margin: 25px 0;
-            border: 1px solid #333;
-        }
+/* ===== GLOBAL LOCK ===== */
+html, body {
+    height: 100%;
+    overflow: hidden; /* scroll lock */
+}
 
-        .preview-thumb {
-            width: 100%;
-            aspect-ratio: 16/9;
-            object-fit: cover;
-            opacity: 0.6;
-        }
+/* ===== LAYOUT ===== */
+.bridge-content {
+    max-width: 420px;
+    margin: 10px auto 0;
+    padding: 5px 12px 90px;
+}
 
-        .preview-info {
-            padding: 15px;
-            text-align: left;
-        }
+/* ===== TIMER ===== */
+.timer-text {
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+    opacity: 0.85;
+}
 
-        .timer-text {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--primary-color, #ff0055);
-            margin-bottom: 10px;
-        }
+/* ===== CARD ===== */
+.preview-card {
+    background: #1a1a1a;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 10px 0;
+    border: 1px solid #333;
+}
 
-        #watchBtn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: not-allowed;
-            background: #333;
-            color: #777;
-            transition: all 0.3s ease;
-        }
+/* ===== THUMBNAIL (ZOOMED) ===== */
+.preview-thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    object-position: center;
+    transform: scale(1.08);
+    opacity: 0.85;
+    background: #111;
+}
 
-        #watchBtn.active {
-            background: var(--primary-color, #ff0055);
-            color: #fff;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 0, 85, 0.3);
-        }
+/* ===== META (COMPRESSED) ===== */
+.preview-info {
+    padding: 8px 10px;
+}
 
-        /* ================= MERGED UPGRADED UX STYLES ================= */
+#prevTitle {
+    font-size: 0.85rem;
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
 
-        .bridge-content {
-            max-width: 420px;
-            margin: 30px auto;
-            padding: 10px 15px 90px; /* bottom safe space for social bar */
-        }
+#prevMeta {
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
 
-        .timer-text {
-            font-size: 1rem;
-            margin-bottom: 8px;
-            opacity: 0.9;
-        }
+/* ===== BUTTON ===== */
+#watchBtn {
+    position: relative;
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    background: #2a2a2a;
+    color: #aaa;
+    cursor: not-allowed;
+    overflow: hidden;
+}
 
-        .preview-card {
-            background: #1a1a1a;
-            border-radius: 12px;
-            overflow: hidden;
-            margin: 15px 0;
-            border: 1px solid #333;
-        }
+/* ===== LOADING WAVE ===== */
+#watchBtn::before {
+    content: "";
+    position: absolute;
+    left: -100%;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,0,85,0.5), transparent);
+    animation: loadingWave 1.2s linear infinite;
+}
 
-        .preview-thumb {
-            width: 100%;
-            aspect-ratio: 16/9;
-            object-fit: cover;
-            opacity: 0.75;
-        }
+@keyframes loadingWave {
+    100% { left: 100%; }
+}
 
-        .preview-info {
-            padding: 12px;
-        }
+/* ===== PRE-ACTIVE ===== */
+#watchBtn.pre-active {
+    box-shadow: 0 0 8px rgba(255,0,85,0.3);
+}
 
-        #watchBtn {
-            width: 100%;
-            padding: 16px;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            background: #333;
-            color: #777;
-            cursor: not-allowed;
-            transition: all 0.25s ease;
-        }
+/* ===== ACTIVE (GREEN + VIBRATION) ===== */
+#watchBtn.active {
+    background: #00c853;
+    color: #fff;
+    cursor: pointer;
+    transform: scale(1.04);
+    animation: pulse 0.4s ease-in-out 2;
+}
 
-        #watchBtn.pre-active {
-            box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);
-        }
+/* remove wave when active */
+#watchBtn.active::before {
+    display: none;
+}
 
-        #watchBtn.active {
-            background: var(--primary-color, #ff0055);
-            color: #fff;
-            cursor: pointer;
-            transform: scale(1.03);
-            box-shadow: 0 6px 18px rgba(255, 0, 85, 0.35);
-        }
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+    100% { transform: scale(1.04); }
+}
 
-    </style>
+</style>
 </head>
 
 <body>
 
-    <div class="bridge-content">
+<div class="bridge-content">
 
-        <p class="timer-text" id="statusText">
-            Your video is loading in <span id="timer">6</span>s...
-        </p>
+    <p class="timer-text" id="statusText">
+        Preparing your video… <span id="timer">5</span>
+    </p>
 
-        <div class="preview-card" id="previewCard" style="display: none;">
-            <img id="prevThumb" src="" class="preview-thumb">
+    <div class="preview-card" id="previewCard" style="display:none;">
+        <img id="prevThumb" class="preview-thumb" loading="eager" decoding="async">
 
-            <div class="preview-info">
-                <div class="title" id="prevTitle" style="font-size: 1rem; margin-bottom: 5px;">
-                    Loading...
-                </div>
-                <div class="meta" id="prevMeta" style="font-size: 0.8rem;">
-                    -- views
-                </div>
-            </div>
+        <div class="preview-info">
+            <div id="prevTitle">Loading...</div>
+            <div id="prevMeta">-- views</div>
         </div>
-
-        <button id="watchBtn">Please Wait...</button>
-
-        <div id="ad-container" style="margin-top: 20px;"></div>
-
     </div>
 
-    <script type="module" src="/bridge.js"></script>
+    <button id="watchBtn">Please wait...</button>
+
+    <div id="ad-container" style="margin-top: 15px;"></div>
+
+</div>
+
+<script type="module" src="/bridge.js"></script>
 
 </body>
 </html>
