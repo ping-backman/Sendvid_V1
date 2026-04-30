@@ -71,7 +71,7 @@ async function init() {
 
 function startCountdown(id) {
 
-  let remaining = 5;
+  let remaining = 7;
   countdownEl.textContent = remaining;
 
   const timer = setInterval(() => {
@@ -79,7 +79,7 @@ function startCountdown(id) {
     remaining--;
     countdownEl.textContent = remaining;
 
-    if (remaining === 2) {
+    if (remaining === 3) {
       watchBtn.classList.add("pre-active");
     }
 
