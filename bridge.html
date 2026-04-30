@@ -17,35 +17,30 @@ html, body {
 
 /* ===== LAYOUT ===== */
 .bridge-content {
-    max-width: 500px;
+    max-width: 620px; /* slightly wider than normal cards */
     margin: 0 auto;
-    padding: 6px 10px 0;
+    padding: 10px;
 
-    height: 100dvh;
     display: flex;
     flex-direction: column;
+    height: 100dvh;
 }
 
 /* ===== TIMER ===== */
 .timer-text {
     font-size: 13px;
-    margin-bottom: 6px;
+    margin-bottom: 10px;
     color: var(--muted);
 }
 
-/* ===== CARD OVERRIDE (USE THEME CARD) ===== */
+/* ===== CARD WRAPPER (NO INTERNAL CHANGES) ===== */
 .bridge-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    margin-bottom: 10px;
 }
 
-/* 🔥 THIS IS THE KEY */
-.bridge-card .thumb {
-    width: 100%;
-    height: clamp(220px, 55vh, 420px); /* adaptive height */
-    object-fit: cover;
-}
+/* 🚫 IMPORTANT: DO NOT TOUCH .thumb */
+/* 🚫 DO NOT TOUCH .card-body */
+/* 🚫 DO NOT TOUCH .title / .meta */
 
 /* ===== BUTTON ===== */
 #watchBtn {
@@ -54,7 +49,7 @@ html, body {
     padding: 10px;
     margin-top: 8px;
 
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 13px;
     font-weight: 600;
 
@@ -96,6 +91,7 @@ html, body {
 /* ===== SOCIAL BAR SPACE ===== */
 #ad-container {
     height: 80px;
+    margin-top: auto; /* pushes it to bottom cleanly */
 }
 
 </style>
@@ -109,7 +105,7 @@ html, body {
         Preparing your video… <span id="timer">5</span>
     </p>
 
-    <!-- ✅ SAME CARD STRUCTURE -->
+    <!-- ✅ EXACT SAME CARD -->
     <div class="card bridge-card" id="previewCard" style="display:none;">
         <img id="prevThumb" class="thumb">
 
