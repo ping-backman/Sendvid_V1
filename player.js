@@ -1,10 +1,11 @@
 // player.js
 
-// Assuming cards.js exposes this function:
-// import { markAsWatched } from './cards.js';
+// 1. Added sandbox="allow-scripts allow-same-origin allow-presentation" to the iframe. 
+//    This is the cleanest way to stop those DOMException errors while still letting the video play.
 
-// streamlined proxyEmbed handling
+// 2. Updated allowfullscreen to the modern allow="... fullscreen ..." format to keep the console tidy.
 
+Player: Updated allowfullscreen to the modern allow="... fullscreen ..." format to keep the console tidy.
 export function loadPlayer(video, wrapper) {
   if (!wrapper || !video) return;
 
@@ -26,7 +27,7 @@ export function loadPlayer(video, wrapper) {
   /* ================= PLAYER UI ================= */
 
   wrapper.innerHTML = `
-    <div class="video-container" style="position: relative; width: 100%; height: 100%;">
+    <div class="video-container" style="position: relative; width: 100%; height: 100%; overflow: hidden;">
       
       <img
         src="${video.thumbnail}"
@@ -48,8 +49,10 @@ export function loadPlayer(video, wrapper) {
       <iframe
         class="video-frame"
         src="about:blank"
+        /* Modern allow syntax for better compatibility */
         allow="autoplay; fullscreen; picture-in-picture"
-        allowfullscreen
+        /* Sandbox prevents the proxy from accessing your top-level domain's storage */
+        sandbox="allow-scripts allow-same-origin allow-presentation"
         style="
           display: none;
           position: absolute;
