@@ -74,7 +74,7 @@ async function init() {
 
 function startCountdown(id) {
 
-  let remaining = 7;
+  let remaining = 6;
   countdownEl.textContent = remaining;
 
   const timer = setInterval(() => {
