@@ -5,7 +5,6 @@
 
 // 2. Updated allowfullscreen to the modern allow="... fullscreen ..." format to keep the console tidy.
 
-Player: Updated allowfullscreen to the modern allow="... fullscreen ..." format to keep the console tidy.
 export function loadPlayer(video, wrapper) {
   if (!wrapper || !video) return;
 
