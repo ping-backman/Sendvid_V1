@@ -43,8 +43,11 @@ async function init() {
     // FAST thumbnail render
     prevThumb.src = v.thumbnail;
     prevTitle.textContent = v.title;
+    
+    if (prevMeta) {
     prevMeta.textContent = `${v.views} views`;
-
+    }
+    
     previewCard.style.display = "block";
 
     // Preconnect early
