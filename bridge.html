@@ -58,7 +58,8 @@ html, body {
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--border);
-
+  position: relative;
+  
   display: flex;
   flex-direction: column;
 }
@@ -77,20 +78,49 @@ html, body {
 }
 
 .card-body {
-  padding: 10px;
+  padding: 0;
+  height: 0;
 }
 
 .title {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 4px;
+  line-height: 1.3;
+
+  color: #fff;
+  z-index: 2;
+
+  /* Prevent long titles from breaking layout */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-/* .meta {
-  font-size: 12px;
-  color: var(--muted); */
-}
+.card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
 
+  height: 60px;
+
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,0.85),
+    rgba(0,0,0,0.4),
+    transparent
+  );
+
+  z-index: 1;
+}   
+  
 /* ================= BRIDGE CARD WRAPPER ================= */
 .bridge-card {
   margin-bottom: 8px;
