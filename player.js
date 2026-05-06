@@ -3,8 +3,6 @@
 // Assuming cards.js exposes this function:
 // import { markAsWatched } from './cards.js';
 
-// streamlined proxyEmbed handling
-
 export function loadPlayer(video, wrapper) {
   if (!wrapper || !video) return;
 
@@ -49,7 +47,6 @@ export function loadPlayer(video, wrapper) {
         class="video-frame"
         src="about:blank"
         allow="autoplay; fullscreen; picture-in-picture"
-        allowfullscreen
         style="
           display: none;
           position: absolute;
@@ -69,6 +66,29 @@ export function loadPlayer(video, wrapper) {
   const frame = wrapper.querySelector(".video-frame");
   const playBtn = wrapper.querySelector(".play-btn");
 
+  let retryCount = 0;
+  let loadTimeout = null;
+
+  /* ================= RETRY (CACHE-BUST) ================= */
+
+  const reloadFrame = () => {
+    if (retryCount >= 2) return;
+    retryCount++;
+
+    console.warn("⚠️ Reloading video (expired link)");
+
+    const bustedSrc =
+      videoSrc + (videoSrc.includes("?") ? "&" : "?") + "r=" + Date.now();
+
+    frame.src = "about:blank";
+
+    setTimeout(() => {
+      frame.src = bustedSrc;
+    }, 300);
+  };
+
+  /* ================= PLAY ================= */
+
   const playVideo = () => {
     frame.src = videoSrc;
     frame.style.display = "block";
@@ -77,10 +97,20 @@ export function loadPlayer(video, wrapper) {
     thumb.style.display = "none";
     playBtn.style.display = "none";
 
-    // Mark as watched if available
+    // Mark as watched
     if (video.id && typeof cards !== "undefined" && cards.markAsWatched) {
       cards.markAsWatched(video.id);
     }
+
+    /* ================= FAILURE DETECTION ================= */
+
+    // Clear any previous timer
+    if (loadTimeout) clearTimeout(loadTimeout);
+
+    // If iframe doesn't properly load in time, assume expired link
+    loadTimeout = setTimeout(() => {
+      reloadFrame();
+    }, 3000); // 3s is safe balance
   };
 
   thumb.addEventListener("click", playVideo);
