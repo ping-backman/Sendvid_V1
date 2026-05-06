@@ -3,6 +3,10 @@ import { fetchVideos } from "/api.js";
 import { createVideoCard } from "/cards.js";
 import { initBackToTop } from "/ui-backtotop.js";
 
+// --- Force zoom back to 100% ---
+document.body.style.zoom = 1 / window.devicePixelRatio;
+document.body.style.transformOrigin = "top center";
+
 const PAGE_SIZE = 20;
 
 let offset = 0;
