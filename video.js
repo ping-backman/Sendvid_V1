@@ -19,8 +19,6 @@ const token = params.get("t");
 const sessionKey = `auth_${videoId}`;
 const isAuthorized = sessionStorage.getItem(sessionKey);
 
-window.history.replaceState({}, document.title, window.location.pathname);
-
 // 1. If not already authorized in this session, check the token
 if (!isAuthorized) {
   const age = Date.now() - Number(token);
@@ -33,6 +31,9 @@ if (!isAuthorized) {
   }
 }
 
+if (window.location.search.includes('t=')) {
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
 /* =========================================================== */
 
 let offset = 0;
