@@ -19,7 +19,7 @@ const token = params.get("t");
 const sessionKey = `auth_${videoId}`;
 const isAuthorized = sessionStorage.getItem(sessionKey);
 
-window.history.replaceState({}, document.title, window.location.pathname + `?id=${videoId}`);
+window.history.replaceState({}, document.title, window.location.pathname);
 
 // 1. If not already authorized in this session, check the token
 if (!isAuthorized) {
