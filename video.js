@@ -4,6 +4,10 @@ import { createVideoCard } from "/cards.js";
 import { loadPlayer } from "/player.js";
 import { initBackToTop } from "/ui-backtotop.js";
 
+// --- Force zoom back to 100% ---
+document.body.style.zoom = 1 / window.devicePixelRatio;
+document.body.style.transformOrigin = "top center";
+
 const PAGE_SIZE = 20;
 const UP_NEXT_COUNT = 4;
 
