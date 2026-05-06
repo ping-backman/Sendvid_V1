@@ -15,18 +15,22 @@ const params = new URLSearchParams(location.search);
 const videoId = params.get("id") || window.location.pathname.split('/').pop();
 
 /* ================= BRIDGE TOKEN PROTECTION ================= */
-
 const token = params.get("t");
-const MAX_TOKEN_AGE = 30000; // 30 seconds
+const sessionKey = `auth_${videoId}`;
+const isAuthorized = sessionStorage.getItem(sessionKey);
 
-if (!token) {
-  window.location.href = `/w/${videoId}`;
-}
+window.history.replaceState({}, document.title, window.location.pathname + `?id=${videoId}`);
 
-const age = Date.now() - Number(token);
-
-if (age > MAX_TOKEN_AGE) {
-  window.location.href = `/w/${videoId}`;
+// 1. If not already authorized in this session, check the token
+if (!isAuthorized) {
+  const age = Date.now() - Number(token);
+  
+  if (!token || age > 30000) {
+    window.location.href = `/w/${videoId}`;
+  } else {
+    // 2. Token is valid! Mark this video as authorized for this tab session
+    sessionStorage.setItem(sessionKey, "true");
+  }
 }
 
 /* =========================================================== */
