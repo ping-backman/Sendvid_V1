@@ -190,7 +190,14 @@ function bootDiscovery() {
   // STAGE 1 → AUTH
   const ok = runAuthGate();
   if (!ok) return;
-
+  
+  if (params.has("t")) {
+    window.history.replaceState(
+      {},
+      document.title,
+      window.location.pathname
+    );
+  }
   // STAGE 2 → PLAYER
   await bootPlayer();
 
