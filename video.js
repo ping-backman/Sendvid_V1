@@ -37,7 +37,7 @@ function runAuthGate() {
   const isAuthorized = sessionStorage.getItem(sessionKey);
 
   const needsRedirect =
-    !isAuthorized || !validToken;
+    !isAuthorized && !validToken;
 
   if (needsRedirect) {
     window.location.replace(`/w/${videoId}`);
