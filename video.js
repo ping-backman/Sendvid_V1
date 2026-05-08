@@ -13,212 +13,188 @@ const UP_NEXT_COUNT = 4;
 
 const params = new URLSearchParams(location.search);
 
-// Handles both:
-// /video/abc123
-// /video/abc123/
 const videoId =
   params.get("id") ||
-  window.location.pathname
-    .split("/")
-    .filter(Boolean)
-    .pop();
+  window.location.pathname.split("/").filter(Boolean).pop();
 
-/* ================= BRIDGE TOKEN PROTECTION ================= */
+/* =========================================================
+   🧠 STAGE 1: AUTH GATE (NO RUNTIME CRASH EVER)
+========================================================= */
 
-const token = params.get("t");
+function runAuthGate() {
 
-const sessionKey = `auth_${videoId}`;
+  const token = params.get("t");
+  const tokenNum = Number(token);
+  const age = Date.now() - tokenNum;
 
-const isAuthorized =
-  sessionStorage.getItem(sessionKey);
+  const validToken =
+    !!token &&
+    Number.isFinite(tokenNum) &&
+    age >= 0 &&
+    age < 30000;
 
-// Safely convert token to number
-const tokenNum = Number(token);
+  const sessionKey = `auth_${videoId}`;
+  const isAuthorized = sessionStorage.getItem(sessionKey);
 
-// Prevent:
-// - empty token bypass
-// - NaN bypass
-// - negative timestamps
-// - future timestamps
-// - expired timestamps
-const age = Date.now() - tokenNum;
+  const needsRedirect =
+    !isAuthorized || !validToken;
 
-const validToken =
-  !!token &&
-  !isNaN(tokenNum) &&
-  age >= 0 &&
-  age < 30000;
-
-if (!isAuthorized) {
-
-  // Invalid or expired token → back to bridge
-  if (!validToken) {
-    window.location.href = `/w/${videoId}`;
-    return;
+  if (needsRedirect) {
+    window.location.replace(`/w/${videoId}`);
+    return false;
   }
 
-  // Valid token → authorize this tab session
   sessionStorage.setItem(sessionKey, "true");
+  return true;
 }
 
-// Clean URL after successful validation
-if (params.has("t")) {
+/* =========================================================
+   🧠 STAGE 2: PLAYER PIPELINE (ISOLATED SAFE ZONE)
+========================================================= */
 
-  window.history.replaceState(
-    {},
-    document.title,
-    window.location.pathname
+async function bootPlayer() {
+  try {
+
+    if (!videoId) return;
+
+    const data = await fetchVideos({ id: videoId });
+
+    if (!data?.videos?.length) {
+      console.warn("No video found");
+      return;
+    }
+
+    const v = data.videos[0];
+
+    const titleEl = document.getElementById("videoTitle");
+    const metaEl = document.getElementById("videoMeta");
+    const wrapper = document.getElementById("playerWrapper");
+
+    if (titleEl) titleEl.textContent = v.title;
+    if (metaEl) metaEl.textContent = `${v.duration} • ${v.views} views`;
+
+    if (wrapper) {
+      loadPlayer(v, wrapper);
+    }
+
+  } catch (err) {
+    console.error("Player error:", err);
+  }
+}
+
+/* =========================================================
+   🧠 STAGE 3: DISCOVERY GRID (NON-CRITICAL UI)
+========================================================= */
+
+function bootDiscovery() {
+
+  let offset = 0;
+  let loading = false;
+  let activeSort = "discover";
+
+  const watched = new Set(
+    JSON.parse(localStorage.getItem("watched") || "[]")
   );
-}
 
-/* =========================================================== */
+  const grid = document.getElementById("discoverGrid");
+  const upNextGrid = document.getElementById("upNextGrid");
+  const loader = document.getElementById("loader");
+  const loadMoreBtn = document.getElementById("loadMore");
+  const resultsHintDesktop = document.getElementById("resultsHintDesktop");
 
-let offset = 0;
-let loading = false;
-let activeSort = "discover";
+  async function fetchBatch(limit) {
+    const data = await fetchVideos({
+      limit,
+      offset,
+      sort: activeSort
+    });
 
-const watched = new Set(
-  JSON.parse(localStorage.getItem("watched") || "[]")
-);
+    if (!data?.videos || data.videos.length < limit || data.nextOffset === -1) {
+      offset = null;
+    } else {
+      offset = data.nextOffset;
+    }
 
-const grid =
-  document.getElementById("discoverGrid");
-
-const upNextGrid =
-  document.getElementById("upNextGrid");
-
-const loader =
-  document.getElementById("loader");
-
-const loadMoreBtn =
-  document.getElementById("loadMore");
-
-const resultsHintDesktop =
-  document.getElementById("resultsHintDesktop");
-
-async function loadVideo() {
-
-  if (!videoId) return;
-
-  const data = await fetchVideos({
-    id: videoId
-  });
-
-  if (
-    !data?.videos ||
-    data.videos.length === 0
-  ) {
-    return;
+    return data.videos ?? [];
   }
 
-  const v = data.videos[0];
+  async function load(reset = false) {
 
-  document.getElementById("videoTitle")
-    .textContent = v.title;
+    if (loading) return;
+    loading = true;
 
-  document.getElementById("videoMeta")
-    .textContent =
-      `${v.duration} • ${v.views} views`;
+    try {
 
-  loadPlayer(
-    v,
-    document.getElementById("playerWrapper"),
-    watched
-  );
-}
+      if (reset) {
+        grid.innerHTML = "";
+        upNextGrid.innerHTML = "";
+        offset = 0;
+      }
 
-async function fetchBatch(limit) {
+      if (loader) loader.style.display = "block";
+      if (loadMoreBtn) loadMoreBtn.style.display = "none";
 
-  const data = await fetchVideos({
-    limit,
-    offset,
-    sort: activeSort
-  });
+      const batch = await fetchBatch(PAGE_SIZE);
 
-  if (
-    !data.videos ||
-    data.videos.length < limit ||
-    data.nextOffset === -1
-  ) {
+      if (reset && upNextGrid) {
+        batch.slice(0, UP_NEXT_COUNT).forEach(v =>
+          upNextGrid.appendChild(
+            createVideoCard(v, { compact: true, watched })
+          )
+        );
+      }
 
-    offset = null;
+      const fragment = document.createDocumentFragment();
 
-  } else {
-
-    offset = data.nextOffset;
-  }
-
-  return data.videos ?? [];
-}
-
-async function load(reset = false) {
-
-  if (loading) return;
-
-  loading = true;
-
-  if (reset) {
-
-    grid.innerHTML = "";
-    upNextGrid.innerHTML = "";
-    offset = 0;
-  }
-
-  loader.style.display = "block";
-  loadMoreBtn.style.display = "none";
-
-  const batch =
-    await fetchBatch(PAGE_SIZE);
-
-  if (reset) {
-
-    batch
-      .slice(0, UP_NEXT_COUNT)
-      .forEach(v =>
-
-        upNextGrid.appendChild(
-          createVideoCard(v, {
-            compact: true,
-            watched
-          })
+      batch.forEach(v =>
+        fragment.appendChild(
+          createVideoCard(v, { watched })
         )
       );
+
+      if (grid) grid.appendChild(fragment);
+
+      if (resultsHintDesktop) {
+        resultsHintDesktop.textContent =
+          `Showing ${grid?.children?.length || 0} suggested`;
+      }
+
+    } catch (err) {
+      console.error("Discovery error:", err);
+    }
+
+    if (loader) loader.style.display = "none";
+    loading = false;
+
+    if (loadMoreBtn) {
+      loadMoreBtn.style.display =
+        offset !== null ? "block" : "none";
+    }
   }
 
-  const fragment =
-    document.createDocumentFragment();
+  load(true);
 
-  batch.forEach(v =>
-
-    fragment.appendChild(
-      createVideoCard(v, {
-        watched
-      })
-    )
-  );
-
-  grid.appendChild(fragment);
-
-  if (resultsHintDesktop) {
-
-    resultsHintDesktop.textContent =
-      `Showing ${grid.children.length} suggested`;
+  if (loadMoreBtn) {
+    loadMoreBtn.onclick = () => load();
   }
 
-  loader.style.display = "none";
-
-  loading = false;
-
-  loadMoreBtn.style.display =
-    offset !== null
-      ? "block"
-      : "none";
+  initBackToTop("backToTop");
 }
 
-loadVideo();
+/* =========================================================
+   🧠 BOOT SEQUENCE (SAFE ORDER)
+========================================================= */
 
-load(true);
+(async function bootstrap() {
 
-loadMoreBtn.onclick = () => load();
+  // STAGE 1 → AUTH
+  const ok = runAuthGate();
+  if (!ok) return;
 
-initBackToTop("backToTop");
+  // STAGE 2 → PLAYER
+  await bootPlayer();
+
+  // STAGE 3 → DISCOVERY
+  bootDiscovery();
+
+})();
