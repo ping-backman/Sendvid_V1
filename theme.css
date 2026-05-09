@@ -465,13 +465,13 @@ button.secondary {
 }
 
 .share-btn {
+  background: #5c7cfa; 
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 14px;
   border-radius: 999px;
   padding: 8px 14px;
-  background: var(--accent); 
   transition:
     background .2s ease,
     transform .2s ease;
