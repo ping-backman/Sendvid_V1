@@ -471,6 +471,7 @@ button.secondary {
   font-size: 14px;
   border-radius: 999px;
   padding: 8px 14px;
+  background: var(--accent); 
   transition:
     background .2s ease,
     transform .2s ease;
