@@ -468,14 +468,14 @@ button.secondary {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
+  font-size: 13px;
 
   background: #4c6ef5;
   color: #fff;
   border: none;
 
   border-radius: 999px;
-  padding: 8px 14px;
+  padding: 5px 13px;
 
   transition:
     background .2s ease,
