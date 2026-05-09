@@ -465,19 +465,25 @@ button.secondary {
 }
 
 .share-btn {
-  background: #5c7cfa; 
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 14px;
+
+  background: #5c7cfa;
+  color: #fff;
+  border: none;
+
   border-radius: 999px;
   padding: 8px 14px;
+
   transition:
     background .2s ease,
     transform .2s ease;
 }
 
 .share-btn:hover {
+  background: #4c6ef5; 
   transform: translateY(-1px);
 }
 
