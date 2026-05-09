@@ -4,9 +4,17 @@ import { createVideoCard } from "/cards.js";
 import { loadPlayer } from "/player.js";
 import { initBackToTop } from "/ui-backtotop.js";
 
-// --- Force zoom back to 100% ---
-document.body.style.zoom = 1 / window.devicePixelRatio;
-document.body.style.transformOrigin = "top center";
+// --- Force zoom back to 100% on desktop only ---
+const isDesktop =
+  window.matchMedia("(min-width: 901px)").matches;
+
+if (isDesktop) {
+  document.body.style.zoom =
+    1 / window.devicePixelRatio;
+
+  document.body.style.transformOrigin =
+    "top center";
+}
 
 const PAGE_SIZE = 20;
 const UP_NEXT_COUNT = 4;
