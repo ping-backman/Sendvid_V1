@@ -1,12 +1,7 @@
 // bridge.js
 import { fetchVideos } from "/api.js";
 
-/* =========================================================
-   DESKTOP ZOOM NORMALIZATION
-   Prevents browser zoom persistence on desktop only.
-   Disabled on mobile/tablets to avoid viewport scaling bugs.
-========================================================= */
-
+// --- Force zoom back to 100% on desktop only --- //
 const isDesktop =
   window.matchMedia("(min-width: 901px)").matches;
 
