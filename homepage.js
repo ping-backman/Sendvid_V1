@@ -23,10 +23,6 @@ let activeDuration = "";
 let currentQuery = "";
 let loading = false;
 
-// Track watched videos for the card components
-const watched = new Set(
-  JSON.parse(localStorage.getItem("watched") || "[]")
-);
 
 // DOM Elements
 const gallery =
@@ -187,7 +183,7 @@ async function load(reset = false) {
     batch.forEach(v => {
 
       fragment.appendChild(
-        createVideoCard(v, { watched })
+        createVideoCard(v)
       );
 
     });
