@@ -1,9 +1,9 @@
 // player.js
 
-// Assuming cards.js exposes this function:
-// import { markAsWatched } from './cards.js';
+import { markAsWatched } from "/cards.js";
 
 export function loadPlayer(video, wrapper) {
+
   if (!wrapper || !video) return;
 
   // Preload thumbnail
@@ -15,17 +15,32 @@ export function loadPlayer(video, wrapper) {
   const videoSrc = video.proxiedEmbed;
 
   if (!videoSrc || typeof videoSrc !== "string") {
-    console.error("❌ Invalid proxiedEmbed", video);
+
+    console.error(
+      "❌ Invalid proxiedEmbed",
+      video
+    );
+
     return;
   }
 
-  console.log("✅ Final Video Source:", videoSrc);
+  console.log(
+    "✅ Final Video Source:",
+    videoSrc
+  );
 
   /* ================= PLAYER UI ================= */
 
   wrapper.innerHTML = `
-    <div class="video-container" style="position: relative; width: 100%; height: 100%;">
-      
+    <div
+      class="video-container"
+      style="
+        position: relative;
+        width: 100%;
+        height: 100%;
+      "
+    >
+
       <img
         src="${video.thumbnail}"
         class="video-thumb"
@@ -41,7 +56,9 @@ export function loadPlayer(video, wrapper) {
         "
       >
 
-      <button class="play-btn">▶</button>
+      <button class="play-btn">
+        ▶
+      </button>
 
       <iframe
         class="video-frame"
@@ -62,57 +79,102 @@ export function loadPlayer(video, wrapper) {
     </div>
   `;
 
-  const thumb = wrapper.querySelector(".video-thumb");
-  const frame = wrapper.querySelector(".video-frame");
-  const playBtn = wrapper.querySelector(".play-btn");
+  const thumb =
+    wrapper.querySelector(".video-thumb");
+
+  const frame =
+    wrapper.querySelector(".video-frame");
+
+  const playBtn =
+    wrapper.querySelector(".play-btn");
 
   let retryCount = 0;
+
   let loadTimeout = null;
+
+  let started = false;
 
   /* ================= RETRY (CACHE-BUST) ================= */
 
   const reloadFrame = () => {
+
     if (retryCount >= 2) return;
+
     retryCount++;
 
-    console.warn("⚠️ Reloading video (expired link)");
+    console.warn(
+      "⚠️ Reloading video (expired link)"
+    );
 
     const bustedSrc =
-      videoSrc + (videoSrc.includes("?") ? "&" : "?") + "r=" + Date.now();
+      videoSrc +
+      (videoSrc.includes("?") ? "&" : "?") +
+      "r=" +
+      Date.now();
 
     frame.src = "about:blank";
 
     setTimeout(() => {
+
       frame.src = bustedSrc;
+
     }, 300);
   };
 
   /* ================= PLAY ================= */
 
   const playVideo = () => {
+
+    // Prevent duplicate starts
+    if (started) return;
+
+    started = true;
+
     frame.src = videoSrc;
-    frame.style.display = "block";
-    frame.style.pointerEvents = "auto";
 
-    thumb.style.display = "none";
-    playBtn.style.display = "none";
+    frame.style.display =
+      "block";
 
-    // Mark as watched
-    if (video.id && typeof cards !== "undefined" && cards.markAsWatched) {
-      cards.markAsWatched(video.id);
+    frame.style.pointerEvents =
+      "auto";
+
+    thumb.style.display =
+      "none";
+
+    playBtn.style.display =
+      "none";
+
+    /* ================= WATCHED ================= */
+
+    if (video.id) {
+
+      markAsWatched(video.id);
     }
 
     /* ================= FAILURE DETECTION ================= */
 
-    // Clear any previous timer
-    if (loadTimeout) clearTimeout(loadTimeout);
+    if (loadTimeout) {
 
-    // If iframe doesn't properly load in time, assume expired link
+      clearTimeout(loadTimeout);
+    }
+
+    // If iframe doesn't properly load in time,
+    // assume expired link
+
     loadTimeout = setTimeout(() => {
+
       reloadFrame();
-    }, 3000); // 3s is safe balance
+
+    }, 3000);
   };
 
-  thumb.addEventListener("click", playVideo);
-  playBtn.addEventListener("click", playVideo);
+  thumb.addEventListener(
+    "click",
+    playVideo
+  );
+
+  playBtn.addEventListener(
+    "click",
+    playVideo
+  );
 }
