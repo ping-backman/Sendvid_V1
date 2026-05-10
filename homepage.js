@@ -439,6 +439,7 @@ if (loadMoreBtn) {
 // Back to top
 initBackToTop("backToTop");
 
+/* ================= WATCHED CROSS-TAB SYNC ================= */
 window.addEventListener("storage", (event) => {
   if (event.key !== "watched") return;
 
