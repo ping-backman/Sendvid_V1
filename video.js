@@ -287,16 +287,6 @@ function bootDiscovery() {
   let currentQuery =
     "";
 
-  const watched = new Set(
-
-    JSON.parse(
-
-      localStorage.getItem(
-        "watched"
-      ) || "[]"
-    )
-  );
-
   /* ================= DOM ================= */
 
   const grid =
@@ -452,8 +442,7 @@ function bootDiscovery() {
             upNextGrid.appendChild(
 
               createVideoCard(v, {
-                compact: true,
-                watched
+                compact: true
               })
             )
           );
@@ -468,9 +457,7 @@ function bootDiscovery() {
 
         fragment.appendChild(
 
-          createVideoCard(v, {
-            watched
-          })
+          createVideoCard(v)
         )
       );
 
