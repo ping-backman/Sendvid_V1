@@ -98,7 +98,10 @@
         placeholder="Search keyword or tag"
       >
 
-      <button id="clearSearchDesktop">
+      <button
+        id="clearSearchDesktop"
+        aria-label="Clear search"
+      >
         ×
       </button>
 
@@ -140,15 +143,6 @@
 
         <!-- =================================================
              SHARE ACTIONS
-
-             Generates:
-             /v/:id?ref=share
-
-             BEHAVIOR:
-             - Direct playback landing
-             - Refresh safe
-             - Per-video exemption only
-             - Internal browsing still protected
         ================================================== -->
 
         <div class="video-actions">
@@ -174,45 +168,6 @@
           class="video-extra"
         ></div>
 
-        <!-- SECTION DIVIDER -->
-
-        <div class="section-divider"></div>
-
-        <!-- =================================================
-             DISCOVER GRID
-        ================================================== -->
-
-        <h2 class="suggested-title">
-          Suggested
-        </h2>
-
-        <div
-          id="discoverGrid"
-          class="grid"
-        ></div>
-
-        <!-- LOADER -->
-
-        <div
-          id="loader"
-          class="loader"
-        >
-
-          <span class="dot"></span>
-          <span class="dot"></span>
-          <span class="dot"></span>
-
-        </div>
-
-        <!-- LOAD MORE -->
-
-        <button
-          id="loadMore"
-          class="secondary load-more"
-        >
-          Load More
-        </button>
-
       </div>
 
     </div>
@@ -237,6 +192,47 @@
     </div>
 
   </div>
+
+  <!-- =====================================================
+       FULL WIDTH DIVIDER
+  ====================================================== -->
+
+  <div class="section-divider"></div>
+
+  <!-- =====================================================
+       DISCOVER GRID
+  ====================================================== -->
+
+  <h2 class="suggested-title">
+    Suggested
+  </h2>
+
+  <div
+    id="discoverGrid"
+    class="grid"
+  ></div>
+
+  <!-- LOADER -->
+
+  <div
+    id="loader"
+    class="loader"
+  >
+
+    <span class="dot"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+
+  </div>
+
+  <!-- LOAD MORE -->
+
+  <button
+    id="loadMore"
+    class="secondary load-more"
+  >
+    Load More
+  </button>
 
 </div>
 
