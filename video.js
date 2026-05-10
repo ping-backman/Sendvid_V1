@@ -9,6 +9,7 @@ const isDesktop =
   window.matchMedia("(min-width: 901px)").matches;
 
 if (isDesktop) {
+
   document.body.style.zoom =
     1 / window.devicePixelRatio;
 
@@ -19,7 +20,8 @@ if (isDesktop) {
 const PAGE_SIZE = 20;
 const UP_NEXT_COUNT = 4;
 
-const params = new URLSearchParams(location.search);
+const params =
+  new URLSearchParams(location.search);
 
 const videoId =
   params.get("id") ||
@@ -29,33 +31,21 @@ const videoId =
     .pop();
 
 /* =========================================================
-   🧠 STAGE 1: AUTH GATE (NO RUNTIME CRASH EVER)
-
-   ACCESS TYPES:
-   1. Bridge token access
-      /v/abc?t=timestamp
-
-   2. Existing session access
-      auth_abc
-
-   3. Shared/public landing access
-      /v/abc?ref=share
-
-   4. Existing shared session access
-      shared_abc
-
-   IMPORTANT:
-   Shared access is PER-VIDEO ONLY.
-   It does NOT unlock the whole site.
+   🧠 STAGE 1: AUTH GATE
 ========================================================= */
 
 function runAuthGate() {
 
   /* ================= BRIDGE TOKEN ================= */
 
-  const token = params.get("t");
-  const tokenNum = Number(token);
-  const age = Date.now() - tokenNum;
+  const token =
+    params.get("t");
+
+  const tokenNum =
+    Number(token);
+
+  const age =
+    Date.now() - tokenNum;
 
   const validToken =
     !!token &&
@@ -65,9 +55,9 @@ function runAuthGate() {
 
   /* ================= SHARED ACCESS ================= */
 
-  const ref = params.get("ref");
+  const ref =
+    params.get("ref");
 
-  // Public landing/share access
   const shareAccess =
     ref === "share";
 
@@ -93,26 +83,27 @@ function runAuthGate() {
     !shareAccess &&
     !hasSharedAccess;
 
-  // No valid access → send through bridge
   if (needsRedirect) {
 
-    window.location.replace(`/w/${videoId}`);
+    window.location.replace(
+      `/w/${videoId}`
+    );
 
     return false;
   }
 
   /* ================= PERSIST ACCESS ================= */
 
-  // Valid bridge token
   if (validToken) {
+
     sessionStorage.setItem(
       sessionKey,
       "true"
     );
   }
 
-  // Shared/public landing access
   if (shareAccess) {
+
     sessionStorage.setItem(
       sharedKey,
       "true"
@@ -123,7 +114,7 @@ function runAuthGate() {
 }
 
 /* =========================================================
-   🧠 STAGE 2: PLAYER PIPELINE (ISOLATED SAFE ZONE)
+   🧠 STAGE 2: PLAYER PIPELINE
 ========================================================= */
 
 async function bootPlayer() {
@@ -139,36 +130,49 @@ async function bootPlayer() {
 
     if (!data?.videos?.length) {
 
-      console.warn("No video found");
+      console.warn(
+        "No video found"
+      );
 
       return;
     }
 
-    const v = data.videos[0];
+    const v =
+      data.videos[0];
 
     const titleEl =
-      document.getElementById("videoTitle");
+      document.getElementById(
+        "videoTitle"
+      );
 
     const metaEl =
-      document.getElementById("videoMeta");
+      document.getElementById(
+        "videoMeta"
+      );
 
     const wrapper =
-      document.getElementById("playerWrapper");
+      document.getElementById(
+        "playerWrapper"
+      );
 
     if (titleEl) {
-      titleEl.textContent = v.title;
+
+      titleEl.textContent =
+        v.title;
     }
 
     if (metaEl) {
+
       metaEl.textContent =
         `${v.duration} • ${v.views} views`;
     }
 
     if (wrapper) {
+
       loadPlayer(v, wrapper);
     }
 
-    // Update page title dynamically
+    // Dynamic page title
     document.title =
       `${v.title} - Sendvid`;
 
@@ -183,121 +187,191 @@ async function bootPlayer() {
 
 /* =========================================================
    🧠 STAGE 2.5: SHARE SYSTEM
-
-   GOALS:
-   - Smooth viral sharing
-   - Direct landing playback
-   - Mobile native share support
-   - Desktop clipboard fallback
 ========================================================= */
 
 function initShareButton() {
 
   const shareBtn =
-    document.getElementById("shareBtn");
+    document.getElementById(
+      "shareBtn"
+    );
 
   const shareStatus =
-    document.getElementById("shareStatus");
+    document.getElementById(
+      "shareStatus"
+    );
 
-  if (!shareBtn || !videoId) return;
+  if (!shareBtn || !videoId) {
+    return;
+  }
 
-  shareBtn.onclick = async () => {
+  shareBtn.onclick =
+    async () => {
 
-    // Shared/public landing URL
-    const shareUrl =
-      `${location.origin}/v/${videoId}?ref=share`;
+      const shareUrl =
+        `${location.origin}/v/${videoId}?ref=share`;
 
-    try {
+      try {
 
-      /* ================= MOBILE SHARE SHEET ================= */
+        /* ================= MOBILE SHARE ================= */
 
-      if (navigator.share) {
+        if (navigator.share) {
 
-        await navigator.share({
-          title: document.title,
-          url: shareUrl
-        });
+          await navigator.share({
+            title: document.title,
+            url: shareUrl
+          });
 
-        return;
-      }
-
-      /* ================= DESKTOP COPY FALLBACK ================= */
-
-      await navigator.clipboard.writeText(
-        shareUrl
-      );
-
-      if (shareStatus) {
-
-        shareStatus.textContent =
-          "Link copied";
-      }
-
-      setTimeout(() => {
-
-        if (shareStatus) {
-          shareStatus.textContent = "";
+          return;
         }
 
-      }, 2000);
+        /* ================= DESKTOP FALLBACK ================= */
 
-    } catch (err) {
-
-      console.error(
-        "Share failed:",
-        err
-      );
-
-      if (shareStatus) {
-
-        shareStatus.textContent =
-          "Share failed";
-      }
-
-      setTimeout(() => {
+        await navigator.clipboard.writeText(
+          shareUrl
+        );
 
         if (shareStatus) {
-          shareStatus.textContent = "";
+
+          shareStatus.textContent =
+            "Link copied";
         }
 
-      }, 2000);
-    }
-  };
+        setTimeout(() => {
+
+          if (shareStatus) {
+
+            shareStatus.textContent = "";
+          }
+
+        }, 2000);
+
+      } catch (err) {
+
+        console.error(
+          "Share failed:",
+          err
+        );
+
+        if (shareStatus) {
+
+          shareStatus.textContent =
+            "Share failed";
+        }
+
+        setTimeout(() => {
+
+          if (shareStatus) {
+
+            shareStatus.textContent = "";
+          }
+
+        }, 2000);
+      }
+    };
 }
 
 /* =========================================================
-   🧠 STAGE 3: DISCOVERY GRID (NON-CRITICAL UI)
+   🧠 STAGE 3: DISCOVERY GRID
 ========================================================= */
 
 function bootDiscovery() {
 
   let offset = 0;
+
   let loading = false;
 
   let activeSort =
     "discover";
 
+  let currentQuery =
+    "";
+
   const watched = new Set(
 
     JSON.parse(
-      localStorage.getItem("watched") || "[]"
+
+      localStorage.getItem(
+        "watched"
+      ) || "[]"
     )
   );
 
+  /* ================= DOM ================= */
+
   const grid =
-    document.getElementById("discoverGrid");
+    document.getElementById(
+      "discoverGrid"
+    );
 
   const upNextGrid =
-    document.getElementById("upNextGrid");
+    document.getElementById(
+      "upNextGrid"
+    );
 
   const loader =
-    document.getElementById("loader");
+    document.getElementById(
+      "loader"
+    );
 
   const loadMoreBtn =
-    document.getElementById("loadMore");
+    document.getElementById(
+      "loadMore"
+    );
 
   const resultsHintDesktop =
-    document.getElementById("resultsHintDesktop");
+    document.getElementById(
+      "resultsHintDesktop"
+    );
+
+  const searchInputDesktop =
+    document.getElementById(
+      "q-desktop"
+    );
+
+  const clearSearchDesktop =
+    document.getElementById(
+      "clearSearchDesktop"
+    );
+
+  /* ================= SORT BUTTONS ================= */
+
+  document
+    .querySelectorAll("[data-sort]")
+    .forEach(btn => {
+
+      btn.onclick = () => {
+
+        document
+          .querySelectorAll("[data-sort]")
+          .forEach(b =>
+            b.classList.remove("active")
+          );
+
+        btn.classList.add("active");
+
+        activeSort =
+          btn.dataset.sort;
+
+        currentQuery = "";
+
+        if (searchInputDesktop) {
+
+          searchInputDesktop.value =
+            "";
+        }
+
+        if (clearSearchDesktop) {
+
+          clearSearchDesktop.style.display =
+            "none";
+        }
+
+        load(true);
+      };
+    });
+
+  /* ================= FETCH ================= */
 
   async function fetchBatch(limit) {
 
@@ -306,7 +380,8 @@ function bootDiscovery() {
 
         limit,
         offset,
-        sort: activeSort
+        sort: activeSort,
+        q: currentQuery
       });
 
     if (
@@ -319,11 +394,14 @@ function bootDiscovery() {
 
     } else {
 
-      offset = data.nextOffset;
+      offset =
+        data.nextOffset;
     }
 
     return data.videos ?? [];
   }
+
+  /* ================= LOAD ================= */
 
   async function load(reset = false) {
 
@@ -336,10 +414,12 @@ function bootDiscovery() {
       if (reset) {
 
         if (grid) {
+
           grid.innerHTML = "";
         }
 
         if (upNextGrid) {
+
           upNextGrid.innerHTML = "";
         }
 
@@ -347,11 +427,15 @@ function bootDiscovery() {
       }
 
       if (loader) {
-        loader.style.display = "block";
+
+        loader.style.display =
+          "block";
       }
 
       if (loadMoreBtn) {
-        loadMoreBtn.style.display = "none";
+
+        loadMoreBtn.style.display =
+          "none";
       }
 
       const batch =
@@ -391,6 +475,7 @@ function bootDiscovery() {
       );
 
       if (grid) {
+
         grid.appendChild(fragment);
       }
 
@@ -398,8 +483,11 @@ function bootDiscovery() {
 
       if (resultsHintDesktop) {
 
+        const count =
+          grid?.children?.length || 0;
+
         resultsHintDesktop.textContent =
-          `Showing ${grid?.children?.length || 0} suggested`;
+          `Showing ${count} suggested`;
       }
 
     } catch (err) {
@@ -413,7 +501,9 @@ function bootDiscovery() {
     /* ================= CLEANUP ================= */
 
     if (loader) {
-      loader.style.display = "none";
+
+      loader.style.display =
+        "none";
     }
 
     loading = false;
@@ -427,7 +517,82 @@ function bootDiscovery() {
     }
   }
 
+  /* ================= SEARCH ================= */
+
+  function bindSearch() {
+
+    if (!searchInputDesktop) {
+      return;
+    }
+
+    let debounceTimer;
+
+    // Initial visibility
+    if (clearSearchDesktop) {
+
+      clearSearchDesktop.style.display =
+        searchInputDesktop.value.trim()
+          ? "block"
+          : "none";
+    }
+
+    searchInputDesktop.oninput =
+      (e) => {
+
+        clearTimeout(
+          debounceTimer
+        );
+
+        const value =
+          e.target.value.trim();
+
+        // Toggle clear button
+        if (clearSearchDesktop) {
+
+          clearSearchDesktop.style.display =
+            value
+              ? "block"
+              : "none";
+        }
+
+        debounceTimer =
+          setTimeout(() => {
+
+            currentQuery =
+              value;
+
+            load(true);
+
+          }, 500);
+      };
+
+    // Clear button
+    if (clearSearchDesktop) {
+
+      clearSearchDesktop.onclick =
+        () => {
+
+          currentQuery =
+            "";
+
+          searchInputDesktop.value =
+            "";
+
+          clearSearchDesktop.style.display =
+            "none";
+
+          load(true);
+        };
+    }
+  }
+
+  bindSearch();
+
+  /* ================= INITIAL LOAD ================= */
+
   load(true);
+
+  /* ================= LOAD MORE ================= */
 
   if (loadMoreBtn) {
 
@@ -435,29 +600,27 @@ function bootDiscovery() {
       () => load();
   }
 
-  initBackToTop("backToTop");
+  /* ================= BACK TO TOP ================= */
+
+  initBackToTop(
+    "backToTop"
+  );
 }
 
 /* =========================================================
-   🧠 BOOT SEQUENCE (SAFE ORDER)
+   🧠 BOOT SEQUENCE
 ========================================================= */
 
 (async function bootstrap() {
 
-  /* ================= STAGE 1 → AUTH ================= */
+  /* ================= AUTH ================= */
 
-  const ok = runAuthGate();
+  const ok =
+    runAuthGate();
 
   if (!ok) return;
 
-  /* ================= CLEAN URL =================
-
-     Removes:
-     ?t=timestamp
-     ?ref=share
-
-     after successful validation
-  ================================================= */
+  /* ================= CLEAN URL ================= */
 
   if (
     params.has("t") ||
@@ -472,15 +635,15 @@ function bootDiscovery() {
     );
   }
 
-  /* ================= STAGE 2 → PLAYER ================= */
+  /* ================= PLAYER ================= */
 
   await bootPlayer();
 
-  /* ================= STAGE 2.5 → SHARE ================= */
+  /* ================= SHARE ================= */
 
   initShareButton();
 
-  /* ================= STAGE 3 → DISCOVERY ================= */
+  /* ================= DISCOVERY ================= */
 
   bootDiscovery();
 
