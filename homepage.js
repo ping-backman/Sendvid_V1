@@ -439,5 +439,18 @@ if (loadMoreBtn) {
 // Back to top
 initBackToTop("backToTop");
 
+window.addEventListener("storage", (event) => {
+  if (event.key !== "watched") return;
+
+  const updated = JSON.parse(event.newValue || "[]");
+
+  document.querySelectorAll(".card").forEach(card => {
+    const id = card.dataset.id;
+    if (updated.includes(id)) {
+      card.classList.add("watched");
+    }
+  });
+});
+
 // Initial load
 load(true);
