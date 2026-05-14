@@ -1,19 +1,68 @@
-//api.js
-const API_BASE = "https://api-cache.uilliam-maya.workers.dev/";
+// api.js
 
-export async function fetchVideos(params = {}) {
-  const url = new URL(API_BASE);
+import {
+  getTrendingBucket
+} from "/trending-session.js";
 
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      url.searchParams.set(key, value);
-    }
-  });
+const API_BASE =
+  "https://api-cache.uilliam-maya.workers.dev/";
 
-  const res = await fetch(url.toString());
+export async function fetchVideos(
+  params = {}
+) {
+
+  const url =
+    new URL(API_BASE);
+
+  /* ================= PARAMS ================= */
+
+  Object.entries(params)
+    .forEach(([key, value]) => {
+
+      if (
+        value !== undefined &&
+        value !== null &&
+        value !== ""
+      ) {
+
+        url.searchParams.set(
+          key,
+          value
+        );
+      }
+    });
+
+  /* ================= STABLE TRENDING ================= */
+
+  const sort =
+    params.sort;
+
+  const query =
+    params.q;
+
+  if (
+    sort === "trending" &&
+    !query
+  ) {
+
+    url.searchParams.set(
+      "tb",
+      getTrendingBucket()
+    );
+  }
+
+  /* ================= FETCH ================= */
+
+  const res =
+    await fetch(
+      url.toString()
+    );
 
   if (!res.ok) {
-    throw new Error("API request failed");
+
+    throw new Error(
+      "API request failed"
+    );
   }
 
   return res.json();
