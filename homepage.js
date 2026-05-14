@@ -18,7 +18,7 @@ if (isDesktop) {
 const PAGE_SIZE = 20;
 
 let offset = 0;
-let activeSort = "relevance";
+let activeSort = "trending";
 let activeDuration = "";
 let currentQuery = "";
 let loading = false;
